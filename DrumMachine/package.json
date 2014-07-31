@@ -1,0 +1,15 @@
+{
+  "ApplicationDrumMachine":  {
+    "name":       "Drum Machine",
+    "mime":       ["osjs\\/drumloop"],
+    "icon":       "devices/speaker.png",
+    "category":   "multimedia",
+    "preload":    [
+      {"src": "main.js", "type": "javascript"},
+      {"src": "main.css", "type": "stylesheet"}
+    ]
+  }
+}
+
+
+

@@ -1,10 +1,11 @@
 {
   "ApplicationDrumMachine":  {
     "name":       "Drum Machine",
-    "mime":       ["osjs\\/drumloop"],
+    "mime":       ["osjs\\/dbeat"],
     "icon":       "devices/speaker.png",
     "category":   "multimedia",
     "preload":    [
+      {"src": "lib.js", "type": "javascript"},
       {"src": "main.js", "type": "javascript"},
       {"src": "main.css", "type": "stylesheet"}
     ]

@@ -65,23 +65,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#title {
-  font-family: 'Michroma', 'Droid Sans', Arial, sans-serif;
-  font-size: 25px;
-  font-weight: bold;
-  display: block;
-  margin: 20px 0 15px 0;
-  text-align: center;
-}
-
-#version {
-  font-weight: bold;
-  font-size: 12px;
-}
 
 .container {
   padding-top : 30px;
   display: none;
+}
+.container:last-child {
+  padding-bottom : 15px;
 }
 
 .container.active {
@@ -267,52 +257,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   vertical-align: top;
 }
 
-#play, #stop {
-  margin-right: 12px;
-}
-
-#stop {
-  display: none;
-}
-
-#play.playing {
-  display: none;
-}
-
-#stop.playing {
-  display: inline;
-}
-
-#demos_container {
-  margin-left: 10px;
-}
-
-#save_container, #load_container {
-  height: 521px;
-}
-
-#save_textarea, #load_textarea {
-  width: 607px;
-  height: 270px;
-  margin: 20px 40px;
-  font-size: 12px;
-  -webkit-user-select: text !important;
-}
-
-#save_ok {
-  display: block;
-  margin: 0 auto;
-}
-
-#load_buttons {
-  margin: 0 auto;
-  width: 160px;
-}
-
-#load_ok, #load_cancel {
-  margin: 0 3px;
-}
-
 #loading {
   position: fixed;
   left: 0;
@@ -343,4 +287,3 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   display: block;
 }
 
-img.preload { display: none; }

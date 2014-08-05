@@ -147,16 +147,16 @@
 
     // You can set application variables here
     this.dialogOptions.mime = 'osjs/dbeat';
-    this.dialogOptions.mimes = ['osjs\\/dbeat'];
+    this.dialogOptions.mimes = metadata.mime;
     this.dialogOptions.defaultFilename = 'New Beat.odbeat';
   };
 
   ApplicationDrumMachine.prototype = Object.create(Application.prototype);
 
   ApplicationDrumMachine.prototype.init = function(core, settings, metadata) {
-    Application.prototype.init.apply(this, arguments);
-
     this.mainWindow = this._addWindow(new ApplicationDrumMachineWindow(this, metadata));
+
+    Application.prototype.init.apply(this, arguments);
   };
 
   ApplicationDrumMachine.prototype.onNew = function() {

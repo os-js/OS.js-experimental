@@ -146,11 +146,9 @@
     Application.apply(this, ['ApplicationDrumMachine', args, metadata]);
 
     // You can set application variables here
-    this.dialogOptions = {
-      mime: 'osjs/dbeat',
-      mimes: ['osjs\\/dbeat'],
-      defaultFilename: 'New Beat.odbeat'
-    };
+    this.dialogOptions.mime = 'osjs/dbeat';
+    this.dialogOptions.mimes = ['osjs\\/dbeat'];
+    this.dialogOptions.defaultFilename = 'New Beat.odbeat';
   };
 
   ApplicationDrumMachine.prototype = Object.create(Application.prototype);
@@ -173,7 +171,7 @@
   };
 
   ApplicationDrumMachine.prototype.onGetSaveData = function(callback) {
-    callback(OSjs.Applications.DefaultApplicationLib.GetBeat());
+    callback(OSjs.Applications.ApplicationDrumMachineLib.GetBeat());
   };
 
   ApplicationDrumMachine.prototype.callback = function(name, args) {

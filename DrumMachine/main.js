@@ -27,7 +27,7 @@
  * @author  Anders Evenrud <andersevenrud@gmail.com>
  * @licence Simplified BSD License
  */
-(function(Application, Window, GUI, Dialogs) {
+(function(Application, Window, GUI, Dialogs, Utils) {
 
   /////////////////////////////////////////////////////////////////////////////
   // WINDOWS
@@ -44,6 +44,8 @@
     this._icon  = metadata.icon;
     this._properties.allow_resize = false;
     this._properties.allow_maximize = false;
+
+    this.$playButton = null;
   };
 
   ApplicationDrumMachineWindow.prototype = Object.create(Window.prototype);
@@ -91,7 +93,7 @@
     ]);
 
     var toolBar = this._addGUIElement(new GUI.ToolBar('ApplicationDrumMachineToolBar'), root);
-    toolBar.addItem('playButton', {title: ('Play'), onClick: function(ev) {
+    this.$playButton = toolBar.addItem('playButton', {title: ('Play'), onClick: function(ev) {
       OSjs.Applications.ApplicationDrumMachineLib.TogglePlay();
     }});
     toolBar.render();
@@ -144,204 +146,37 @@
     Application.apply(this, ['ApplicationDrumMachine', args, metadata]);
 
     // You can set application variables here
+    this.dialogOptions = {
+      mime: 'osjs/dbeat',
+      mimes: ['osjs\\/dbeat'],
+      defaultFilename: 'New Beat.odbeat'
+    };
   };
 
   ApplicationDrumMachine.prototype = Object.create(Application.prototype);
 
-  ApplicationDrumMachine.prototype.destroy = function() {
-    // Destroy communication, timers, objects etc. here
-
-    return Application.prototype.destroy.apply(this, arguments);
-  };
-
   ApplicationDrumMachine.prototype.init = function(core, settings, metadata) {
-    var self = this;
-
     Application.prototype.init.apply(this, arguments);
 
-    // Create your main window
-    var mainWindow = this._addWindow(new ApplicationDrumMachineWindow(this, metadata));
-
-    // Do other stuff here
-    // See 'DefaultApplication' sample in 'helpers.js' for more code
+    this.mainWindow = this._addWindow(new ApplicationDrumMachineWindow(this, metadata));
   };
 
-  ApplicationDrumMachine.prototype._onMessage = function(obj, msg, args) {
-    Application.prototype._onMessage.apply(this, arguments);
-
-    // Make sure we kill our application if main window was closed
-    if ( msg == 'destroyWindow' && obj._name === 'ApplicationDrumMachineWindow' ) {
-      this.destroy();
-    }
+  ApplicationDrumMachine.prototype.onNew = function() {
+    OSjs.Applications.ApplicationDrumMachineLib.Reset();
   };
 
-  /**
-   * Perform an external action
-   */
-  ApplicationDrumMachine.prototype.action = function(action, filename, mime) {
-    switch ( action ) {
-      case 'new' :
-        this.onNew();
-      break;
-
-      case 'open' :
-        this.onOpen(filename, mime);
-      break;
-
-      case 'save' :
-        this.onSave(filename, mime);
-      break;
-
-      case 'saveas' :
-        this.onSaveAs(filename, mime);
-      break;
-
-      case 'close' :
-        this.destroy();
-      break;
-    }
-  };
-
-  /**
-   * Open given file
-   */
-  ApplicationDrumMachine.prototype.doOpen = function(filename, mime, data) {
+  ApplicationDrumMachine.prototype.onOpen = function(filename, mime, data) {
     OSjs.Applications.ApplicationDrumMachineLib.SetBeat(data);
   };
 
-  /**
-   * Save to given file
-   */
-  ApplicationDrumMachine.prototype.doSave = function(filename, mime) {
-    var self = this;
-    var win = this._getWindow('ApplicationDrumMachineWindow');
-
-    var _onSaveFinished = function(name) {
-      self.setCurrentFile(name, mime);
-      OSjs.API.getCoreInstance().message('vfs', {type: 'write', path: OSjs.Utils.dirname(name), filename: OSjs.Utils.filename(name), source: self.__pid});
-    };
-
-    var data = OSjs.Applications.ApplicationDrumMachineLib.GetBeat();
-
-    win._toggleLoading(true);
-    OSjs.API.call('fs', {'method': 'write', 'arguments': [filename, data]}, function(res) {
-      if ( res && res.result ) {
-        _onSaveFinished(filename);
-      } else {
-        if ( res && res.error ) {
-          self.onError(OSjs._("Failed to save file: {0}", filename), res.error, "doSave");
-          return;
-        }
-        self.onError(OSjs._("Failed to save file: {0}", filename), OSjs._("Unknown error"), "doSave");
-      }
-    }, function(error) {
-      self.onError(OSjs._("Failed to save file (call): {0}", filename), error, "doSave");
-    });
+  ApplicationDrumMachine.prototype.onSave = function(filename, mime, data) {
   };
 
-  /**
-   * File operation error
-   */
-  ApplicationDrumMachine.prototype.onError = function(error, action) {
-    action || "unknown";
-
-    this.setCurrentFile(null, null);
-
-    var win = this._getWindow('ApplicationDrumMachineWindow');
-    if ( win ) {
-      win._error(OSjs._("{0} Application Error", self.__label), OSjs._("Failed to perform action '{0}'", action), error);
-      win._toggleDisabled(false);
-    } else {
-      OSjs.API.error(OSjs._("{0} Application Error", self.__label), OSjs._("Failed to perform action '{0}'", action), error);
-    }
+  ApplicationDrumMachine.prototype.onGetSaveData = function(callback) {
+    callback(OSjs.Applications.DefaultApplicationLib.GetBeat());
   };
 
-  /**
-   * Wrapper for save action
-   */
-  ApplicationDrumMachine.prototype.onSave = function(filename, mime) {
-    if ( this.currentFilename ) {
-      this.doSave(this.currentFilename, mime);
-    }
-  };
-
-  /**
-   * Wrapper for save as action
-   */
-  ApplicationDrumMachine.prototype.onSaveAs = function(filename, mime) {
-    var self = this;
-    var win = this._getWindow('ApplicationDrumMachineWindow');
-    var dir = this.currentFilename ? Utils.dirname(this.currentFilename) : null;
-    var fnm = this.currentFilename ? Utils.filename(this.currentFilename) : null;
-
-    if ( win ) {
-      win._toggleDisabled(true);
-      this._createDialog('File', [{type: 'save', path: dir, filename: fnm, mime: 'osjs/dbeat', mimes: ['osjs\\/dbeat'], defaultFilename: 'New Beat.dbeat', filetypes: FileTypes}, function(btn, fname) {
-        if ( win ) {
-          win._toggleDisabled(false);
-        }
-        if ( btn !== 'ok' ) return;
-        self.doSave(fname, mime);
-      }], win);
-    }
-  };
-
-  /**
-   * Wrapper for open action
-   */
-  ApplicationDrumMachine.prototype.onOpen = function(filename, mime) {
-    var self = this;
-    var win = this._getWindow('ApplicationDrumMachineWindow');
-
-    var _openFile = function(fname, fmime) {
-      if ( !fmime || (fmime != "osjs/draw" && !fmime.match(/^image/)) ) {
-        OSjs.API.error(self.__label, OSjs._("Cannot open file"), OSjs._("Not supported!"));
-        return;
-      }
-
-      var ext = OSjs.Utils.filext(fname).toLowerCase();
-
-      win.setTitle('Loading...');
-      win._toggleLoading(true);
-      OSjs.API.call('fs', {'method': 'read', 'arguments': [fname]}, function(res) {
-        if ( res && res.result ) {
-          self.doOpen(fname, fmime, res.result);
-        } else {
-          if ( res && res.error ) {
-            self.onError(OSjs._("Failed to open file: {0}", fname), res.error, "onOpen");
-            return;
-          }
-          self.onError(OSjs._("Failed to open file: {0}", fname), OSjs._("Unknown error"), "onOpen");
-        }
-      }, function(error) {
-        self.onError(OSjs._("Failed to open file (call): {0}", fname), error, "onOpen");
-      });
-    };
-
-    if ( filename ) {
-      _openFile(filename, mime);
-    } else {
-      var path = (this.currentFilename) ? Utils.dirname(this.currentFilename) : null;
-
-      win._toggleDisabled(true);
-
-      this._createDialog('File', [{type: 'open', mime: 'osjs/dbeat', mimes: ['osjs\\/dbeat'], path: path}, function(btn, fname, fmime) {
-        if ( win ) {
-          win._toggleDisabled(false);
-        }
-
-        if ( btn !== 'ok' ) return;
-        _openFile(fname, fmime);
-      }], win);
-    }
-  };
-
-  /**
-   * Wrapper for new action
-   */
-  ApplicationDrumMachine.prototype.onNew = function() {
-    this.setCurrentFile(null, null);
-    OSjs.Applications.ApplicationDrumMachineLib.Reset();
+  ApplicationDrumMachine.prototype.callback = function(name, args) {
   };
 
   //
@@ -350,4 +185,4 @@
   OSjs.Applications = OSjs.Applications || {};
   OSjs.Applications.ApplicationDrumMachine = ApplicationDrumMachine;
 
-})(OSjs.Core.Application, OSjs.Core.Window, OSjs.GUI, OSjs.Dialogs);
+})(OSjs.Helpers.DefaultApplication, OSjs.Core.Window, OSjs.GUI, OSjs.Dialogs, OSjs.Utils);

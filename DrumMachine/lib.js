@@ -1116,7 +1116,6 @@ function drawPlayhead(xindex) {
       sliderSetValue('tom3_thumb', theBeat.tom3PitchVal);
       sliderSetValue('swing_thumb', theBeat.swingFactor);
 
-      toggleLoadContainer();
       updateControls();
     }
   };

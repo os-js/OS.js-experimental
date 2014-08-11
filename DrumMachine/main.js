@@ -30,7 +30,43 @@
 (function(Application, Window, GUI, Dialogs, Utils) {
 
   /////////////////////////////////////////////////////////////////////////////
-  // WINDOWS
+  // ABOUT WINDOWS
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Main Window Constructor
+   */
+  var ApplicationDrumMachineAboutWindow = function(app, metadata) {
+    Window.apply(this, ['ApplicationDrumMachineAboutWindow', {width: 500, height: 500}, app]);
+
+    // Set window properties and other stuff here
+    this._title = "About " + metadata.name;
+    this._icon  = metadata.icon;
+    this._properties.gravity        = "center";
+    this._properties.allow_resize   = false;
+    this._properties.allow_maximize = false;
+    this._properties.allow_minimize = false;
+  };
+
+  ApplicationDrumMachineAboutWindow.prototype = Object.create(Window.prototype);
+
+  ApplicationDrumMachineAboutWindow.prototype.init = function(wmRef, app) {
+    var root = Window.prototype.init.apply(this, arguments);
+
+    var text = document.createElement("div");
+    text.appendChild(document.createTextNode("Original Project can be found "));
+    var link = document.createElement("a");
+    link.href = "https://chromium.googlecode.com/svn/trunk/samples/audio/shiny-drum-machine.html";
+    link.target = "_blank";
+    link.appendChild(document.createTextNode("here"));
+    text.appendChild(link);
+    root.appendChild(text);
+
+    return root;
+  };
+
+  /////////////////////////////////////////////////////////////////////////////
+  // MAIN WINDOWS
   /////////////////////////////////////////////////////////////////////////////
 
   /**
@@ -92,6 +128,12 @@
       }}
     ]);
 
+    menuBar.addItem(OSjs._("Help"), [
+      {title: OSjs._('About'), name: 'About', onClick: function() {
+        app.showAboutWindow();
+      }},
+    ]);
+
     var toolBar = this._addGUIElement(new GUI.ToolBar('ApplicationDrumMachineToolBar'), root);
     this.$playButton = toolBar.addItem('playButton', {title: ('Play'), onClick: function(ev) {
       OSjs.Applications.ApplicationDrumMachineLib.TogglePlay();
@@ -149,6 +191,8 @@
     this.dialogOptions.mime = 'osjs/dbeat';
     this.dialogOptions.mimes = metadata.mime;
     this.dialogOptions.defaultFilename = 'New Beat.odbeat';
+
+    this.aboutWindow = null;
   };
 
   ApplicationDrumMachine.prototype = Object.create(Application.prototype);
@@ -172,6 +216,14 @@
 
   ApplicationDrumMachine.prototype.onGetSaveData = function(callback) {
     callback(OSjs.Applications.ApplicationDrumMachineLib.GetBeat());
+  };
+
+  ApplicationDrumMachine.prototype.showAboutWindow = function() {
+    if ( this.aboutWindow ) {
+      return;
+    }
+
+    this.aboutWindow = this._addWindow(new ApplicationDrumMachineAboutWindow(this, this.__metadata));
   };
 
   ApplicationDrumMachine.prototype.callback = function(name, args) {

@@ -678,6 +678,8 @@ function tempoDecrease() {
 }
 
 function handleSliderMouseDown(event) {
+    event.preventDefault();
+
     mouseCapture = event.target.id;
 
     // calculate offset of mousedown on slider

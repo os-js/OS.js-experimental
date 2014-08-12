@@ -185,6 +185,10 @@
    * Application constructor
    */
   var ApplicationDrumMachine = function(args, metadata) {
+    if ( !Utils.getCompability().audioContext ) {
+      throw "Your browser does not support AudioContext :(";
+    }
+
     Application.apply(this, ['ApplicationDrumMachine', args, metadata]);
 
     // You can set application variables here

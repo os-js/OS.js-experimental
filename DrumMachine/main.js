@@ -81,7 +81,7 @@
     this._properties.allow_resize = false;
     this._properties.allow_maximize = false;
 
-    this.$playButton = null;
+    this.toolBar = null;
   };
 
   ApplicationDrumMachineWindow.prototype = Object.create(Window.prototype);
@@ -134,11 +134,13 @@
       }},
     ]);
 
-    var toolBar = this._addGUIElement(new GUI.ToolBar('ApplicationDrumMachineToolBar'), root);
-    this.$playButton = toolBar.addItem('playButton', {title: ('Play'), onClick: function(ev) {
+    this.toolBar = this._addGUIElement(new GUI.ToolBar('ApplicationDrumMachineToolBar'), root);
+    this.toolBar.addItem('playButton', {title: ('Play'), onClick: function(ev) {
       OSjs.Applications.ApplicationDrumMachineLib.TogglePlay();
     }});
-    toolBar.render();
+    this.toolBar.render();
+
+    this._toggleLoading(true);
 
     return root;
   };
@@ -173,8 +175,23 @@
 
   ApplicationDrumMachineWindow.prototype.destroy = function() {
     // Destroy custom objects etc. here
+    OSjs.Applications.ApplicationDrumMachineLib.Stop();
 
     Window.prototype.destroy.apply(this, arguments);
+  };
+
+  ApplicationDrumMachineWindow.prototype.handleCallback = function(name, args) {
+    if ( name == "inited" ) {
+      this._toggleLoading(false);
+    }
+
+    if ( !this.toolBar ) return;
+    var btn = this.toolBar.getItem("playButton").getElementsByTagName("span")[0];
+    if ( name == "handlePlay" ) {
+      btn.innerHTML = "Stop";
+    } else if ( name == "handleStop" ) {
+      btn.innerHTML = "Play";
+    }
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -231,6 +248,9 @@
   };
 
   ApplicationDrumMachine.prototype.callback = function(name, args) {
+    if ( this.mainWindow ) {
+      this.mainWindow.handleCallback(name, args);
+    }
   };
 
   //

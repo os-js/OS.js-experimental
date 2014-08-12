@@ -492,6 +492,12 @@ function init() {
 
     initControls();
     updateControls();
+
+    setTimeout(function() {
+      if ( _app ) {
+        _app.callback("inited");
+      }
+    }, 500);
 }
 
 function initControls() {
@@ -964,6 +970,10 @@ function handlePlay(event) {
     startTime = context.currentTime + 0.005;
     schedule();
     isPlaying = true;
+
+    if ( _app ) {
+      _app.callback("handlePlay");
+    }
 }
 
 function handleStop(event) {
@@ -974,6 +984,10 @@ function handleStop(event) {
 
     rhythmIndex = 0;
     isPlaying = false;
+
+    if ( _app ) {
+      _app.callback("handleStop");
+    }
 }
 
 function loadBeat(beat) {

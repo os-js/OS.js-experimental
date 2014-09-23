@@ -30,12 +30,21 @@
 (function(Application, Window, GUI, Dialogs, Utils) {
   'use strict';
 
+  if ( window.hasOwnProperty('AudioContext') && !window.hasOwnProperty('webkitAudioContext') ) {
+    window.webkitAudioContext = AudioContext;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // GLOBALS
+  /////////////////////////////////////////////////////////////////////////////
+
   var MIN_TEMPO   = 50;
   var MAX_TEMPO   = 180;
   var MAX_SWING   = 0.08;
   var TRACKS      = 16;
   var INSTRUMENTS = 6;
   var VOLUMES     = [0, 0.3, 1];
+
   var LABELS      = [
     'Tom 1',
     'Tom 2',
@@ -113,12 +122,252 @@
     ]
   };
 
+  /////////////////////////////////////////////////////////////////////////////
+  // SAMPLER
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * @class
+   */
+  function Sampler(opts, app) {
+    opts = opts || {};
+    opts.onNote = opts.onNote || function() {};
+
+    var context = new webkitAudioContext();
+    var finalMixNode;
+    if ( context.createDynamicsCompressor ) {
+      var compressor = context.createDynamicsCompressor();
+      compressor.connect(context.destination);
+      finalMixNode = compressor;
+    } else {
+      finalMixNode = context.destination;
+    }
+
+    // Create master volume.
+    var masterGainNode = context.createGain();
+    masterGainNode.gain.value = 0.7; // reduce overall volume to avoid clipping
+    masterGainNode.connect(finalMixNode);
+
+    // Create effect volume.
+    var effectLevelNode = context.createGain();
+    effectLevelNode.gain.value = 1.0; // effect level slider controls this
+    effectLevelNode.connect(masterGainNode);
+
+    // Create convolver for effect
+    var convolver = context.createConvolver();
+    convolver.connect(effectLevelNode);
+
+    this.opts            = opts;
+    this.kit             = new Kit('default', app);
+    this.context         = context;
+    this.masterGainNode  = masterGainNode;
+    this.convolver       = convolver;
+    this.beat            = DEMO_BEAT;
+    this.playing         = false;
+    this.timeout         = null;
+    this.startTime       = null;
+    this.rhythmIndex     = 0;
+    this.lastDrawTime    = -1;
+    this.noteTime        = 0.0;
+  }
+
+  Sampler.prototype.init = function(callback) {
+    this.kit.preload(this.context, function() {
+      callback();
+    });
+  };
+
+  Sampler.prototype.destroy = function() {
+    this.stop();
+
+    this.kit = null;
+    this.beat = null;
+  };
+
+  Sampler.prototype.load = function(data) {
+    this.stop();
+    this.beat = (typeof data === 'string') ? JSON.parse(data) : data;
+  };
+
+  Sampler.prototype.reset = function() {
+    this.stop();
+    this.beat = NULL_BEAT;
+  };
+
+  Sampler.prototype.note = function(contextPlayTime, rhythmIndex) {
+    var effectDryMix = 1.0;
+    var effectWetMix = 1.0;
+
+    var kickPitch = 0;
+    var snarePitch = 0;
+    var hihatPitch = 0;
+    var tom1Pitch = 0;
+    var tom2Pitch = 0;
+    var tom3Pitch = 0;
+
+    function playNote(buffer, pan, x, y, z, sendGain, mainGain, playbackRate, noteTime) {
+      // Create the note
+      var voice = this.context.createBufferSource();
+      voice.buffer = buffer;
+      voice.playbackRate.value = playbackRate;
+
+      // Optionally, connect to a panner
+      var finalNode;
+      if (pan) {
+        var panner = this.context.createPanner();
+        panner.setPosition(x, y, z);
+        voice.connect(panner);
+        finalNode = panner;
+      } else {
+        finalNode = voice;
+      }
+
+      // Connect to dry mix
+      var dryGainNode = this.context.createGain();
+      dryGainNode.gain.value = mainGain * effectDryMix;
+      finalNode.connect(dryGainNode);
+      dryGainNode.connect(this.masterGainNode);
+
+      // Connect to wet mix
+      var wetGainNode = this.context.createGain();
+      wetGainNode.gain.value = sendGain;
+      finalNode.connect(wetGainNode);
+      wetGainNode.connect(this.convolver);
+
+      voice.start(noteTime);
+    }
+
+    var ins = this.beat.instruments;
+
+    // Kick
+    if (this.beat.instruments[5].pattern[rhythmIndex]) {
+      playNote.call(this, this.kit.buffers.kick, false, 0,0,-2, 0.5, VOLUMES[this.beat.instruments[5].pattern[rhythmIndex]] * 1.0, kickPitch, contextPlayTime);
+    }
+
+    // Snare
+    if (this.beat.instruments[4].pattern[rhythmIndex]) {
+      playNote.call(this, this.kit.buffers.snare, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[4].pattern[rhythmIndex]] * 0.6, snarePitch, contextPlayTime);
+    }
+
+    // Hihat
+    if (this.beat.instruments[3].pattern[rhythmIndex]) {
+      // Pan the hihat according to sequence position.
+      playNote.call(this, this.kit.buffers.hihat, true, 0.5*rhythmIndex - 4, 0, -1.0, 1, VOLUMES[this.beat.instruments[3].pattern[rhythmIndex]] * 0.7, hihatPitch, contextPlayTime);
+    }
+
+    // Toms
+    if (this.beat.instruments[2].pattern[rhythmIndex]) {
+      playNote.call(this, this.kit.buffers.tom1, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[2].pattern[rhythmIndex]] * 0.6, tom1Pitch, contextPlayTime);
+    }
+
+    if (this.beat.instruments[1].pattern[rhythmIndex]) {
+      playNote.call(this, this.kit.buffers.tom2, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[1].pattern[rhythmIndex]] * 0.6, tom2Pitch, contextPlayTime);
+    }
+
+    if (this.beat.instruments[0].pattern[rhythmIndex]) {
+      playNote.call(this, this.kit.buffers.tom3, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[0].pattern[rhythmIndex]] * 0.6, tom3Pitch, contextPlayTime);
+    }
+
+  };
+
+
+  Sampler.prototype.tick = function() {
+    function advanceNote() {
+      var secondsPerBeat = 60.0 / this.beat.tempo; // Advance time by a 16th note...
+
+      this.rhythmIndex++;
+      if ( this.rhythmIndex === TRACKS ) {
+        this.rhythmIndex = 0;
+      }
+
+      if ( this.rhythmIndex % 2 ) {
+        this.noteTime += (0.25 + MAX_SWING * this.beat.swingFactor) * secondsPerBeat;
+      } else {
+        this.noteTime += (0.25 - MAX_SWING * this.beat.swingFactor) * secondsPerBeat;
+      }
+    }
+
+
+    // The sequence starts at startTime, so normalize currentTime so that it's 0 at the start of the sequence.
+    var currentTime = this.context.currentTime;
+    currentTime -= this.startTime;
+
+    while ( this.noteTime < currentTime + 0.200) {
+      var contextPlayTime = this.noteTime + this.startTime;
+      this.note(contextPlayTime, this.rhythmIndex);
+
+      // Attempt to synchronize drawing time with sound
+      if ( this.noteTime != this.lastDrawTime ) {
+        this.lastDrawTime = this.noteTime;
+        var idx = (this.rhythmIndex + 15) % 16;
+        this.opts.onNote(idx, this.noteTime);
+      }
+
+      advanceNote.call(this);
+    }
+
+    var self = this;
+    this.timeout = setTimeout(function() {
+      self.tick();
+    }, 0);
+  };
+
+  Sampler.prototype.toggle = function() {
+    if ( this.playing ) {
+      this.stop();
+    } else {
+      this.play();
+    }
+  };
+
+  Sampler.prototype.stop = function() {
+    if ( !this.playing ) { return; }
+
+    if ( this.timeout ) {
+      clearTimeout(this.timeout);
+    }
+
+    this.opts.onNote();
+
+    this.timeout     = null;
+    this.playing     = false;
+    this.startTime   = null;
+    this.rhythmIndex = 0;
+    this.noteTime    = 0.0;
+  };
+
+  Sampler.prototype.play = function() {
+    if ( this.playing ) { return; }
+    this.stop();
+
+    if ( !this.context ) {
+      throw "Cannot play, no context";
+    }
+
+    this.playing   = true;
+    this.startTime = this.context.currentTime + 0.005;
+    this.noteTime  = 0.0;
+
+    this.tick();
+  };
+
+  Sampler.prototype.setNote = function(row, col, state) {
+    this.beat.instruments[row].pattern[col] = state;
+  };
+
+  Sampler.prototype.getData = function() {
+    return JSON.stringify(this.beat);
+  };
+
+  /////////////////////////////////////////////////////////////////////////////
+  // KITS
+  /////////////////////////////////////////////////////////////////////////////
+
 
   /**
    * @class
    */
   function Kit(name, app) {
-
     var rootName = OSjs.API.getApplicationResource(app, "");
     var kitName  = "R8";
     var pathName = rootName + "drum-samples/" + kitName + "/";
@@ -204,10 +453,18 @@
    * Main Window Constructor
    */
   var ApplicationDrumSamplerWindow = function(app, metadata) {
+    var self = this;
+
     Window.apply(this, ['ApplicationDrumSamplerWindow', {width: 600, height: 240}, app]);
 
     this.$table        = null;
+    this.buttons       = [];
     this.title         = metadata.name + ' v0.1';
+    this.sampler       = new Sampler({
+      onNote: function(idx, time) {
+        self.handleHighlight(idx, time);
+      }
+    }, app);
 
     // Set window properties and other stuff here
     this._title = this.title;
@@ -216,50 +473,6 @@
     this._properties.allow_resize   = false;
     this._properties.allow_maximize = false;
     this._properties.allow_minimize = true;
-
-
-    //
-    // Audio Context
-    //
-    var context = new webkitAudioContext();
-    var finalMixNode;
-    if ( context.createDynamicsCompressor ) {
-      var compressor = context.createDynamicsCompressor();
-      compressor.connect(context.destination);
-      finalMixNode = compressor;
-    } else {
-      finalMixNode = context.destination;
-    }
-
-    // Create master volume.
-    var masterGainNode = context.createGain();
-    masterGainNode.gain.value = 0.7; // reduce overall volume to avoid clipping
-    masterGainNode.connect(finalMixNode);
-
-    // Create effect volume.
-    var effectLevelNode = context.createGain();
-    effectLevelNode.gain.value = 1.0; // effect level slider controls this
-    effectLevelNode.connect(masterGainNode);
-
-    // Create convolver for effect
-    var convolver = context.createConvolver();
-    convolver.connect(effectLevelNode);
-
-    //
-    // Beat
-    //
-    this.kit             = new Kit('default', app);
-    this.context         = context;
-    this.masterGainNode  = masterGainNode;
-    this.convolver       = convolver;
-    this.beat            = DEMO_BEAT;
-    this.buttons         = [];
-    this.playing         = false;
-    this.timeout         = null;
-    this.startTime       = null;
-    this.rhythmIndex     = 0;
-    this.lastDrawTime    = -1;
-    this.noteTime        = 0.0;
   };
 
   ApplicationDrumSamplerWindow.prototype = Object.create(Window.prototype);
@@ -283,7 +496,7 @@
         app.action("new");
       }},
       {title: OSjs._('Load demo track'), name: 'LoadDemo', onClick: function() {
-        self.doDemoTrack();
+        self.doOpen(null, DEMO_BEAT);
       }},
       {title: OSjs._('Open'), name: 'Open', onClick: function() {
         app.action("open");
@@ -349,7 +562,7 @@
     this._toggleDisabled(true);
 
     var self = this;
-    this.kit.preload(this.context, function() {
+    this.sampler.init(function() {
       self._toggleDisabled(false);
       self.doDraw();
     });
@@ -357,7 +570,10 @@
 
   ApplicationDrumSamplerWindow.prototype.destroy = function() {
     // Destroy custom objects etc. here
-    this.doStop();
+    if ( this.sampler ) {
+      this.sampler.destroy();
+      this.sampler = null;
+    }
 
     if ( this.$table ) {
       if ( this.$table.parentNode ) {
@@ -366,26 +582,26 @@
       this.$table = null;
     }
 
-    this.kit = null;
-    this.beat = null;
+    this.buttons = [];
 
     Window.prototype.destroy.apply(this, arguments);
   };
 
   ApplicationDrumSamplerWindow.prototype.onPlayPressed = function() {
-    if ( this.playing ) {
-      this.doStop();
-    } else {
-      this.doPlay();
+    if ( this.sampler ) {
+      this.sampler.toggle();
     }
   };
 
   ApplicationDrumSamplerWindow.prototype.onButtonToggle = function(ev, idx, row, col, state) {
-    this.beat.instruments[row].pattern[col] = state;
+    if ( !this.sampler ) { return; }
+
+    this.sampler.setNote(row, col, state);
   };
 
   ApplicationDrumSamplerWindow.prototype.doDraw = function() {
-    var b = this.beat;
+    if ( !this.sampler ) { return; }
+    var b = this.sampler.beat;
     var a, l, j, t = 0;
 
     for ( var i = 0; i < INSTRUMENTS; i++ ) {
@@ -397,39 +613,10 @@
     }
   };
 
-  ApplicationDrumSamplerWindow.prototype.doPlay = function() {
-    this.doStop();
-
-    if ( !this.context ) {
-      throw "Cannot play, no context";
-    }
-
-    this.playing   = true;
-    this.startTime = this.context.currentTime + 0.005;
-    this.noteTime  = 0.0;
-
-    this.handleTick();
-  };
-
-  ApplicationDrumSamplerWindow.prototype.doStop = function() {
-    if ( !this.playing ) { return; }
-
-    if ( this.timeout ) {
-      clearTimeout(this.timeout);
-    }
-
-    this.handleHighlight();
-
-    this.timeout     = null;
-    this.playing     = false;
-    this.startTime   = null;
-    this.rhythmIndex = 0;
-    this.noteTime    = 0.0;
-  };
-
   ApplicationDrumSamplerWindow.prototype.doNew = function() {
-    this.doStop();
-    this.beat = NULL_BEAT;
+    if ( this.sampler ) {
+      this.sampler.reset();
+    }
     this.doDraw();
 
     this.updateTitle(null);
@@ -440,138 +627,17 @@
   };
 
   ApplicationDrumSamplerWindow.prototype.doOpen = function(filename, data) {
-    this.doStop();
-    this.beat = (typeof data === 'string') ? JSON.parse(data) : data;
+    if ( this.sampler ) {
+      this.sampler.load(data);
+    }
     this.doDraw();
-
     this.updateTitle(filename);
-  };
-
-  ApplicationDrumSamplerWindow.prototype.doDemoTrack = function() {
-    this.doOpen(null, DEMO_BEAT);
   };
 
   ApplicationDrumSamplerWindow.prototype.updateTitle = function(filename) {
     var name = filename ? Utils.filename(filename) : 'New Beat';
     var title = this.title + ' - ' + name;
     this._setTitle(title);
-  };
-
-  ApplicationDrumSamplerWindow.prototype.handleTick = function() {
-    function advanceNote() {
-      var secondsPerBeat = 60.0 / this.beat.tempo; // Advance time by a 16th note...
-
-      this.rhythmIndex++;
-      if ( this.rhythmIndex === TRACKS ) {
-        this.rhythmIndex = 0;
-      }
-
-      if ( this.rhythmIndex % 2 ) {
-        this.noteTime += (0.25 + MAX_SWING * this.beat.swingFactor) * secondsPerBeat;
-      } else {
-        this.noteTime += (0.25 - MAX_SWING * this.beat.swingFactor) * secondsPerBeat;
-      }
-    }
-
-
-    // The sequence starts at startTime, so normalize currentTime so that it's 0 at the start of the sequence.
-    var currentTime = this.context.currentTime;
-    currentTime -= this.startTime;
-
-    while ( this.noteTime < currentTime + 0.200) {
-      var contextPlayTime = this.noteTime + this.startTime;
-      this.handleNote(contextPlayTime, this.rhythmIndex);
-
-      // Attempt to synchronize drawing time with sound
-      if ( this.noteTime != this.lastDrawTime ) {
-        this.lastDrawTime = this.noteTime;
-        var idx = (this.rhythmIndex + 15) % 16;
-        this.handleHighlight(idx);
-      }
-
-      advanceNote.call(this);
-    }
-
-    var self = this;
-    this.timeout = setTimeout(function() {
-      self.handleTick();
-    }, 0);
-  };
-
-  ApplicationDrumSamplerWindow.prototype.handleNote = function(contextPlayTime, rhythmIndex) {
-    var effectDryMix = 1.0;
-    var effectWetMix = 1.0;
-
-    var kickPitch = 0;
-    var snarePitch = 0;
-    var hihatPitch = 0;
-    var tom1Pitch = 0;
-    var tom2Pitch = 0;
-    var tom3Pitch = 0;
-
-    function playNote(buffer, pan, x, y, z, sendGain, mainGain, playbackRate, noteTime) {
-      // Create the note
-      var voice = this.context.createBufferSource();
-      voice.buffer = buffer;
-      voice.playbackRate.value = playbackRate;
-
-      // Optionally, connect to a panner
-      var finalNode;
-      if (pan) {
-        var panner = this.context.createPanner();
-        panner.setPosition(x, y, z);
-        voice.connect(panner);
-        finalNode = panner;
-      } else {
-        finalNode = voice;
-      }
-
-      // Connect to dry mix
-      var dryGainNode = this.context.createGain();
-      dryGainNode.gain.value = mainGain * effectDryMix;
-      finalNode.connect(dryGainNode);
-      dryGainNode.connect(this.masterGainNode);
-
-      // Connect to wet mix
-      var wetGainNode = this.context.createGain();
-      wetGainNode.gain.value = sendGain;
-      finalNode.connect(wetGainNode);
-      wetGainNode.connect(this.convolver);
-
-      voice.start(noteTime);
-    }
-
-    var ins = this.beat.instruments;
-
-    // Kick
-    if (this.beat.instruments[5].pattern[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.kick, false, 0,0,-2, 0.5, VOLUMES[this.beat.instruments[5].pattern[rhythmIndex]] * 1.0, kickPitch, contextPlayTime);
-    }
-
-    // Snare
-    if (this.beat.instruments[4].pattern[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.snare, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[4].pattern[rhythmIndex]] * 0.6, snarePitch, contextPlayTime);
-    }
-
-    // Hihat
-    if (this.beat.instruments[3].pattern[rhythmIndex]) {
-      // Pan the hihat according to sequence position.
-      playNote.call(this, this.kit.buffers.hihat, true, 0.5*rhythmIndex - 4, 0, -1.0, 1, VOLUMES[this.beat.instruments[3].pattern[rhythmIndex]] * 0.7, hihatPitch, contextPlayTime);
-    }
-
-    // Toms
-    if (this.beat.instruments[2].pattern[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.tom1, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[2].pattern[rhythmIndex]] * 0.6, tom1Pitch, contextPlayTime);
-    }
-
-    if (this.beat.instruments[1].pattern[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.tom2, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[1].pattern[rhythmIndex]] * 0.6, tom2Pitch, contextPlayTime);
-    }
-
-    if (this.beat.instruments[0].pattern[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.tom3, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[0].pattern[rhythmIndex]] * 0.6, tom3Pitch, contextPlayTime);
-    }
-
   };
 
   ApplicationDrumSamplerWindow.prototype.handleHighlight = function(idx) {
@@ -588,7 +654,10 @@
   };
 
   ApplicationDrumSamplerWindow.prototype.getData = function() {
-    return JSON.stringify(this.beat);
+    if ( this.sampler ) {
+      return this.sampler.getData();
+    }
+    return null;
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -599,7 +668,8 @@
    * Application constructor
    */
   var ApplicationDrumSampler = function(args, metadata) {
-    if ( !OSjs.Compability.audioContext ) {
+    //if ( !OSjs.Compability.audioContext ) {
+    if ( !window.webkitAudioContext ) {
       throw 'Your browser does not support AudioContext :(';
     }
 

@@ -30,12 +30,13 @@
 (function(Application, Window, GUI, Dialogs, Utils) {
   'use strict';
 
-  var MIN_TEMPO = 50;
-  var MAX_TEMPO = 180;
-  var MAX_SWING = 0.08;
-  var LENGTH    = 16;
-  var VOLUMES   = [0, 0.3, 1];
-  var LABELS    = [
+  var MIN_TEMPO   = 50;
+  var MAX_TEMPO   = 180;
+  var MAX_SWING   = 0.08;
+  var TRACKS      = 16;
+  var INSTRUMENTS = 6;
+  var VOLUMES     = [0, 0.3, 1];
+  var LABELS      = [
     'Tom 1',
     'Tom 2',
     'Tom 3',
@@ -44,8 +45,74 @@
     'Kick'
   ];
 
-  var NULL_BEAT = {"kitIndex":0,"effectIndex":0,"tempo":100,"swingFactor":0,"effectMix":0.25,"kickPitchVal":0.5,"snarePitchVal":0.5,"hihatPitchVal":0.5,"tom1PitchVal":0.5,"tom2PitchVal":0.5,"tom3PitchVal":0.5,"rhythm1":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"rhythm2":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"rhythm3":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"rhythm4":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"rhythm5":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"rhythm6":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]};
-  var DEMO_BEAT = {"kitIndex":13,"effectIndex":18,"tempo":120,"swingFactor":0,"effectMix":0.19718309859154926,"kickPitchVal":0.5,"snarePitchVal":0.5,"hihatPitchVal":0.5,"tom1PitchVal":0.5,"tom2PitchVal":0.5,"tom3PitchVal":0.5,"rhythm1":[2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"rhythm2":[0,0,0,0,2,0,0,0,0,0,0,0,2,0,0,0],"rhythm3":[0,0,0,0,0,0,2,0,2,0,0,0,0,0,0,0],"rhythm4":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0],"rhythm5":[0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0],"rhythm6":[0,0,0,0,0,0,0,2,0,2,2,0,0,0,0,0]};
+  var NULL_BEAT = {
+    "kit": null,
+    "tempo": 120,
+    "effect": null,
+    "effectMix": 0.25,
+    "swingFactor": 0,
+    "instruments": [
+      {
+        "pitch": 0.5,
+        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      },
+      {
+        "pitch": 0.5,
+        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      },
+      {
+        "pitch": 0.5,
+        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      },
+      {
+        "pitch": 0.5,
+        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      },
+      {
+        "pitch": 0.5,
+        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      },
+      {
+        "pitch": 0.5,
+        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      }
+    ]
+  };
+
+  var DEMO_BEAT = {
+    "kit": null,
+    "tempo": 120,
+    "effect": null,
+    "effectMix": 0.25,
+    "swingFactor": 0,
+    "instruments": [
+      {
+        "pitch": 0.5,
+        "pattern": [0,0,0,0,0,0,0,2,0,2,2,0,0,0,0,0]
+      },
+      {
+        "pitch": 0.5,
+        "pattern": [0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      },
+      {
+        "pitch": 0.5,
+        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0]
+      },
+      {
+        "pitch": 0.5,
+        "pattern": [0,0,0,0,0,0,2,0,2,0,0,0,0,0,0,0]
+      },
+      {
+        "pitch": 0.5,
+        "pattern": [0,0,0,0,2,0,0,0,0,0,0,0,2,0,0,0]
+      },
+      {
+        "pitch": 0.5,
+        "pattern": [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      }
+    ]
+  };
+
 
   /**
    * @class
@@ -156,14 +223,12 @@
     //
     var context = new webkitAudioContext();
     var finalMixNode;
-    if (context.createDynamicsCompressor) {
-        // Create a dynamics compressor to sweeten the overall mix.
-        var compressor = context.createDynamicsCompressor();
-        compressor.connect(context.destination);
-        finalMixNode = compressor;
+    if ( context.createDynamicsCompressor ) {
+      var compressor = context.createDynamicsCompressor();
+      compressor.connect(context.destination);
+      finalMixNode = compressor;
     } else {
-        // No compressor available in this implementation.
-        finalMixNode = context.destination;
+      finalMixNode = context.destination;
     }
 
     // Create master volume.
@@ -246,7 +311,7 @@
     table.className = 'Table';
 
     var x, y, row, col, i = 0;
-    for ( y = 0; y < LABELS.length; y++ ) {
+    for ( y = 0; y < INSTRUMENTS; y++ ) {
       row = document.createElement('div');
       row.className = 'Row';
 
@@ -255,7 +320,7 @@
       col.appendChild(document.createTextNode(LABELS[y]));
       row.appendChild(col);
 
-      for ( x = 0; x < LENGTH; x++ ) {
+      for ( x = 0; x < TRACKS; x++ ) {
         col = document.createElement('div');
         col.className = 'Col';
         row.appendChild(col);
@@ -316,20 +381,17 @@
   };
 
   ApplicationDrumSamplerWindow.prototype.onButtonToggle = function(ev, idx, row, col, state) {
-    var l = "rhythm" + ((LABELS.length - (row)).toString());
-    this.beat[l][col] = state;
+    this.beat.instruments[row].pattern[col] = state;
   };
 
   ApplicationDrumSamplerWindow.prototype.doDraw = function() {
     var b = this.beat;
     var a, l, j, t = 0;
 
-    var tl = LABELS.length;
-    for ( var i = 0; i < tl; i++ ) {
-      l = "rhythm" + ((tl - i).toString());
-      a = b[l];
-      for ( j = 0; j < a.length; j++ ) {
-        this.buttons[t].setState(a[j]);
+    for ( var i = 0; i < INSTRUMENTS; i++ ) {
+      a = b.instruments[i];
+      for ( j = 0; j < TRACKS; j++ ) {
+        this.buttons[t].setState(a.pattern[j]);
         t++;
       }
     }
@@ -400,7 +462,7 @@
       var secondsPerBeat = 60.0 / this.beat.tempo; // Advance time by a 16th note...
 
       this.rhythmIndex++;
-      if ( this.rhythmIndex == LENGTH ) {
+      if ( this.rhythmIndex === TRACKS ) {
         this.rhythmIndex = 0;
       }
 
@@ -479,41 +541,43 @@
       voice.start(noteTime);
     }
 
+    var ins = this.beat.instruments;
+
     // Kick
-    if (this.beat.rhythm1[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.kick, false, 0,0,-2, 0.5, VOLUMES[this.beat.rhythm1[rhythmIndex]] * 1.0, kickPitch, contextPlayTime);
+    if (this.beat.instruments[5].pattern[rhythmIndex]) {
+      playNote.call(this, this.kit.buffers.kick, false, 0,0,-2, 0.5, VOLUMES[this.beat.instruments[5].pattern[rhythmIndex]] * 1.0, kickPitch, contextPlayTime);
     }
 
     // Snare
-    if (this.beat.rhythm2[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.snare, false, 0,0,-2, 1, VOLUMES[this.beat.rhythm2[rhythmIndex]] * 0.6, snarePitch, contextPlayTime);
+    if (this.beat.instruments[4].pattern[rhythmIndex]) {
+      playNote.call(this, this.kit.buffers.snare, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[4].pattern[rhythmIndex]] * 0.6, snarePitch, contextPlayTime);
     }
 
     // Hihat
-    if (this.beat.rhythm3[rhythmIndex]) {
+    if (this.beat.instruments[3].pattern[rhythmIndex]) {
       // Pan the hihat according to sequence position.
-      playNote.call(this, this.kit.buffers.hihat, true, 0.5*rhythmIndex - 4, 0, -1.0, 1, VOLUMES[this.beat.rhythm3[rhythmIndex]] * 0.7, hihatPitch, contextPlayTime);
+      playNote.call(this, this.kit.buffers.hihat, true, 0.5*rhythmIndex - 4, 0, -1.0, 1, VOLUMES[this.beat.instruments[3].pattern[rhythmIndex]] * 0.7, hihatPitch, contextPlayTime);
     }
 
     // Toms
-    if (this.beat.rhythm4[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.tom1, false, 0,0,-2, 1, VOLUMES[this.beat.rhythm4[rhythmIndex]] * 0.6, tom1Pitch, contextPlayTime);
+    if (this.beat.instruments[2].pattern[rhythmIndex]) {
+      playNote.call(this, this.kit.buffers.tom1, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[2].pattern[rhythmIndex]] * 0.6, tom1Pitch, contextPlayTime);
     }
 
-    if (this.beat.rhythm5[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.tom2, false, 0,0,-2, 1, VOLUMES[this.beat.rhythm5[rhythmIndex]] * 0.6, tom2Pitch, contextPlayTime);
+    if (this.beat.instruments[1].pattern[rhythmIndex]) {
+      playNote.call(this, this.kit.buffers.tom2, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[1].pattern[rhythmIndex]] * 0.6, tom2Pitch, contextPlayTime);
     }
 
-    if (this.beat.rhythm6[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.tom3, false, 0,0,-2, 1, VOLUMES[this.beat.rhythm6[rhythmIndex]] * 0.6, tom3Pitch, contextPlayTime);
+    if (this.beat.instruments[0].pattern[rhythmIndex]) {
+      playNote.call(this, this.kit.buffers.tom3, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[0].pattern[rhythmIndex]] * 0.6, tom3Pitch, contextPlayTime);
     }
 
   };
 
   ApplicationDrumSamplerWindow.prototype.handleHighlight = function(idx) {
     var i, j;
-    for ( i = 0; i < LABELS.length; i++ ) {
-      for ( j = 0; j < LENGTH; j++ ) {
+    for ( i = 0; i < INSTRUMENTS; i++ ) {
+      for ( j = 0; j < TRACKS; j++ ) {
         if ( j === idx ) {
           Utils.$addClass(this.$table.childNodes[i].childNodes[j+1], 'Highlight');
         } else {

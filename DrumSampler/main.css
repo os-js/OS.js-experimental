@@ -1,0 +1,114 @@
+/*!
+ * OS.js - JavaScript Operating System
+ *
+ * Copyright (c) 2011-2014, Anders Evenrud <andersevenrud@gmail.com>
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met: 
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer. 
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution. 
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @author  Anders Evenrud <andersevenrud@gmail.com>
+ * @licence Simplified BSD License
+ */
+
+.Window_ApplicationDrumSamplerWindow .WindowWrapper {
+}
+
+.Window_ApplicationDrumSamplerWindow .WindowWrapper .Table {
+  margin-top : 20px;
+  margin-bottom : 10px;
+}
+.Window_ApplicationDrumSamplerWindow .WindowWrapper .Table * {
+  user-select : none;
+}
+.Window_ApplicationDrumSamplerWindow .WindowWrapper .Table > .Row {
+  height : 30px;
+}
+.Window_ApplicationDrumSamplerWindow .WindowWrapper .Table > .Row > .Col {
+  width : 30px;
+  height : 30px;
+  display : inline-block;
+  text-align : center;
+}
+
+.Window_ApplicationDrumSamplerWindow .WindowWrapper .Table > .Row > .Col.Label {
+  width : 100px;
+}
+
+.Window_ApplicationDrumSamplerWindow .WindowWrapper .Table > .Row > .Col.Highlight {
+  background : #fff;
+}
+.Window_ApplicationDrumSamplerWindow .WindowWrapper .Table > .Row > .Col.Highlight .GUIToggleButton {
+  -webkit-transform: scale(1.2);
+}
+
+.GUIToggleButton {
+  display : inline-block;
+  vertical-align : middle;
+  position : relative;
+  width : 20px;
+  height : 20px;
+
+  background-color : #fff;
+  border-radius : 20px;
+  border : 1px solid #666;
+  box-shadow : 0px 0px 1px 1px rgba(34, 34, 34, .1);
+}
+.GUIToggleButton > .Inner {
+  position : absolute;
+  top : 0px;
+  left : 0px;
+  right : 0px;
+  bottom : 0px;
+  z-index : 1;
+
+  background-color : #000;
+  border : 0px solid transparent;
+  box-shadow : 0px 0px 1px 1px rgba(34, 34, 34, .2);
+}
+.GUIToggleButton > .Click {
+  position : absolute;
+  top : 0px;
+  left : 0px;
+  right : 0px;
+  bottom : 0px;
+  z-index : 10;
+  cursor : pointer;
+}
+
+.GUIToggleButton.State_0 > .Inner {
+  border-radius : 0px;
+  background-color : transparent;
+  box-shadow : none;
+}
+.GUIToggleButton.State_1 > .Inner {
+  border-radius : 12px;
+  left : 6px;
+  right : 6px;
+  top : 6px;
+  bottom : 6px;
+}
+.GUIToggleButton.State_2 > .Inner {
+  border-radius : 18px;
+  left : 2px;
+  right : 2px;
+  top : 2px;
+  bottom : 2px;
+}

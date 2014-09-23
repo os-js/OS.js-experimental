@@ -594,10 +594,11 @@
   };
 
   ApplicationDrumSampler.prototype.onGetSaveData = function(callback) {
+    var data = '';
     if ( this.mainWindow ) {
-      return this.mainWindow.getData();
+      data = this.mainWindow.getData();
     }
-    return '';
+    callback(data);
   };
 
   //

@@ -324,9 +324,24 @@
   };
 
   Sampler.prototype.tick = function() {
-    function advanceNote() {
-      var secondsPerBeat = 60.0 / this.beat.tempo; // Advance time by a 16th note...
+    // The sequence starts at startTime, so normalize currentTime so that it's 0 at the start of the sequence.
+    var currentTime = this.context.currentTime;
+    currentTime -= this.startTime;
 
+    while ( this.noteTime < currentTime + 0.200) {
+
+      // Attempt to synchronize drawing time with sound
+      if ( this.noteTime != this.lastDrawTime ) {
+        this.lastDrawTime = this.noteTime;
+        var idx = (this.rhythmIndex + 15) % 16;
+        this.opts.onNote(idx, this.noteTime);
+      }
+
+      var contextPlayTime = this.noteTime + this.startTime;
+      this.note(contextPlayTime, this.rhythmIndex);
+
+      // Advance note
+      var secondsPerBeat = 60.0 / this.beat.tempo; // Advance time by a 16th note...
       this.rhythmIndex++;
       if ( this.rhythmIndex === TRACKS ) {
         this.rhythmIndex = 0;
@@ -339,26 +354,10 @@
       }
     }
 
-
-    // The sequence starts at startTime, so normalize currentTime so that it's 0 at the start of the sequence.
-    var currentTime = this.context.currentTime;
-    currentTime -= this.startTime;
-
-    while ( this.noteTime < currentTime + 0.200) {
-      var contextPlayTime = this.noteTime + this.startTime;
-      this.note(contextPlayTime, this.rhythmIndex);
-
-      // Attempt to synchronize drawing time with sound
-      if ( this.noteTime != this.lastDrawTime ) {
-        this.lastDrawTime = this.noteTime;
-        var idx = (this.rhythmIndex + 15) % 16;
-        this.opts.onNote(idx, this.noteTime);
-      }
-
-      advanceNote.call(this);
-    }
-
     var self = this;
+    if ( this.timeout ) {
+      clearTimeout(this.timeout);
+    }
     this.timeout = setTimeout(function() {
       self.tick();
     }, 0);
@@ -903,12 +902,13 @@
 
   ApplicationDrumSamplerWindow.prototype.handleHighlight = function(idx) {
     var i, j;
+    var cn = this.$table.childNodes;
     for ( i = 0; i < INSTRUMENT_COUNT; i++ ) {
       for ( j = 0; j < TRACKS; j++ ) {
         if ( j === idx ) {
-          Utils.$addClass(this.$table.childNodes[i].childNodes[j+1], 'Highlight');
+          Utils.$addClass(cn[i].childNodes[j+1], 'Highlight');
         } else {
-          Utils.$removeClass(this.$table.childNodes[i].childNodes[j+1], 'Highlight');
+          Utils.$removeClass(cn[i].childNodes[j+1], 'Highlight');
         }
       }
     }

@@ -32,7 +32,8 @@
 }
 
 .Window_ApplicationDrumSamplerWindow .WindowWrapper .Table {
-  background : #dadada;
+  color : #fafafa;
+  background : #303030;
   padding-top : 25px;
   padding-bottom : 25px;
 }
@@ -54,15 +55,11 @@
 }
 
 .Window_ApplicationDrumSamplerWindow .WindowWrapper .Table > .Row > .Col.Highlight {
-  background : #fff;
-}
-.Window_ApplicationDrumSamplerWindow .WindowWrapper .Table > .Row > .Col.Highlight .GUIToggleButton {
-  -webkit-transform: scale(1.2);
 }
 
 .Window_ApplicationDrumSamplerWindow .WindowWrapper .Sliders {
   text-align : center;
-  background : #8d8d8d;
+  background : #242424;
   padding-top : 25px;
   padding-bottom : 25px;
 }
@@ -73,10 +70,19 @@
 .Window_ApplicationDrumSamplerWindow .WindowWrapper .Sliders > .Container > .Label {
   padding-bottom : 25px;
   font-weight : bold;
-  color : #000;
+  color : #fafafa;
 }
 .Window_ApplicationDrumSamplerWindow .WindowWrapper .Sliders > .Container > .GUISlider {
   display : inline-block;
+}
+
+.Window_ApplicationDrumSamplerWindow .WindowWrapper  .GUISlider .Root {
+  border-color : #444;
+  background : #000;
+}
+.Window_ApplicationDrumSamplerWindow .WindowWrapper  .GUISlider .Button {
+  border-color : #444;
+  background : #000;
 }
 
 .GUIToggleButton {
@@ -88,8 +94,16 @@
 
   background-color : #fff;
   border-radius : 20px;
-  border : 1px solid #666;
+  border : 1px solid #444;
   box-shadow : 0px 0px 1px 1px rgba(34, 34, 34, .1);
+
+  background: #3a3000;
+  background: -moz-radial-gradient(center, ellipse cover,  #3a3000 0%, #000000 100%);
+  background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,#3a3000), color-stop(100%,#000000));
+  background: -webkit-radial-gradient(center, ellipse cover,  #3a3000 0%,#000000 100%);
+  background: -o-radial-gradient(center, ellipse cover,  #3a3000 0%,#000000 100%);
+  background: -ms-radial-gradient(center, ellipse cover,  #3a3000 0%,#000000 100%);
+  background: radial-gradient(ellipse at center,  #3a3000 0%,#000000 100%);
 }
 .GUIToggleButton > .Inner {
   position : absolute;
@@ -99,9 +113,32 @@
   bottom : 0px;
   z-index : 1;
 
-  background-color : #000;
   border : 0px solid transparent;
   box-shadow : 0px 0px 1px 1px rgba(34, 34, 34, .2);
+
+  background: #ccad00;
+  background: -moz-radial-gradient(center, ellipse cover,  #ccad00 0%, #000000 100%);
+  background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,#ccad00), color-stop(100%,#000000));
+  background: -webkit-radial-gradient(center, ellipse cover,  #ccad00 0%,#000000 100%);
+  background: -o-radial-gradient(center, ellipse cover,  #ccad00 0%,#000000 100%);
+  background: -ms-radial-gradient(center, ellipse cover,  #ccad00 0%,#000000 100%);
+  background: radial-gradient(ellipse at center,  #ccad00 0%,#000000 100%);
+}
+.Window_ApplicationDrumSamplerWindow .WindowWrapper .Table > .Row > .Col.Highlight .GUIToggleButton {
+  -webkit-transform: scale(1.2);
+  -moz-transform: scale(1.2);
+  -ms-transform: scale(1.2);
+  -o-transform: scale(1.2);
+  transform: scale(1.2);
+
+  background: #d6ae00;
+  background: -moz-radial-gradient(center, ellipse cover,  #d6ae00 0%, #9e4306 100%);
+  background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,#d6ae00), color-stop(100%,#9e4306));
+  background: -webkit-radial-gradient(center, ellipse cover,  #d6ae00 0%,#9e4306 100%);
+  background: -o-radial-gradient(center, ellipse cover,  #d6ae00 0%,#9e4306 100%);
+  background: -ms-radial-gradient(center, ellipse cover,  #d6ae00 0%,#9e4306 100%);
+  background: radial-gradient(ellipse at center,  #d6ae00 0%,#9e4306 100%);
+
 }
 .GUIToggleButton > .Click {
   position : absolute;
@@ -115,7 +152,7 @@
 
 .GUIToggleButton.State_0 > .Inner {
   border-radius : 0px;
-  background-color : transparent;
+  background : transparent;
   box-shadow : none;
 }
 .GUIToggleButton.State_1 > .Inner {

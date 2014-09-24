@@ -109,13 +109,26 @@
         }
       }
     }), root);
+
+    var demoMenu = [];
+    var demos = OSjs.Applications.ApplicationDrumSampler.Demos;
+    for ( var d = 0; d < demos.length; d++ ) {
+      demoMenu.push({
+        title: 'Demo ' + (d+1),
+        name: 'Demo_' + d,
+        onClick: (function(idx) {
+          return function() {
+            self.doOpen(null, Utils.cloneObject(demos[idx]));
+          };
+        })(d)
+      });
+    }
+
     menuBar.addItem(OSjs._('File'), [
       {title: OSjs._('New'), name: 'New', onClick: function() {
         app.action('new');
       }},
-      {title: OSjs._('Load demo track'), name: 'LoadDemo', onClick: function() {
-        self.doOpen(null, Utils.cloneObject(CONFIG.DEMO_BEAT));
-      }},
+      {title: OSjs._('Load demo track'), name: 'LoadDemo', menu: demoMenu},
       {title: OSjs._('Open'), name: 'Open', onClick: function() {
         app.action('open');
       }},

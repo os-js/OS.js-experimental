@@ -26,6 +26,10 @@
  *
  * @author  Anders Evenrud <andersevenrud@gmail.com>
  * @licence Simplified BSD License
+ *
+ * Inspired by:
+ * https://chromium.googlecode.com/svn/trunk/samples/audio/shiny-drum-machine.html
+ * Copyright 2011, Google Inc.
  */
 (function(Application, Window, GUI, Dialogs, Utils) {
   'use strict';
@@ -39,6 +43,7 @@
   /////////////////////////////////////////////////////////////////////////////
 
   var SAMPLE_PATH      = '/'; // Set later
+  var EFFECT_PATH      = '/'; // Set later
   var MIN_TEMPO        = 50;
   var MAX_TEMPO        = 180;
   var MAX_SWING        = 0.08;
@@ -47,6 +52,7 @@
   var INSTRUMENT_ORDER = ['tom1', 'tom2', 'tom3', 'hihat', 'snare', 'kick'];
   var VOLUMES          = [0, 0.3, 1];
   var DEFAULT_KIT      = 'R8';
+  var DEFAULT_EFFECT   = 'none';
 
   var SLIDER_LABELS = {
     swing: 'Swing Level',
@@ -62,40 +68,87 @@
   var INSTRUMENTS = {
     'tom1' : {
       label: 'Tom 1',
-      play: function(buffer, volume, pitch, contextPlayTime, rhythmIndex) {
-        return [buffer, false, 0,0,-2, 1, volume * 0.6, pitch, contextPlayTime];
-      }
+      pan: false,
+      x: 0,
+      y: 0,
+      z: -2,
+      g: 1,
+      v: 0.6
     },
     'tom2' : {
       label: 'Tom 2',
-      play: function(buffer, volume, pitch, contextPlayTime, rhythmIndex) {
-        return [buffer, false, 0,0,-2, 1, volume * 0.6, pitch, contextPlayTime];
-      }
+      pan: false,
+      x: 0,
+      y: 0,
+      z: -2,
+      g: 1,
+      v: 0.6
     },
     'tom3' : {
       label: 'Tom 3',
-      play: function(buffer, volume, pitch, contextPlayTime, rhythmIndex) {
-        return [buffer, false, 0,0,-2, 1, volume * 0.6, pitch, contextPlayTime];
-      }
+      pan: false,
+      x: 0,
+      y: 0,
+      z: -2,
+      g: 1,
+      v: 0.6
     },
     'hihat' : {
       label: 'Hi-Hat',
-      play: function(buffer, volume, pitch, contextPlayTime, rhythmIndex) {
-        return [buffer, true, 0.5*rhythmIndex - 4, 0, -1.0, 1, volume * 0.6, pitch, contextPlayTime];
-      }
+      pan: true,
+      x: function(rhythmIndex) { return 0.5*rhythmIndex-4; },
+      y: 0,
+      z: -1.0,
+      g: 1,
+      v: 0.7
     },
     'snare' : {
       label: 'Snare',
-      play: function(buffer, volume, pitch, contextPlayTime, rhythmIndex) {
-        return [buffer, false, 0,0,-2, 1, volume * 0.6, pitch, contextPlayTime];
-      }
+      pan: false,
+      x: 0,
+      y: 0,
+      z: -2,
+      g: 1,
+      v: 0.6
     },
     'kick' : {
       label: 'Kick',
-      play: function(buffer, volume, pitch, contextPlayTime, rhythmIndex) {
-        return [buffer, false, 0,0,-2, 0.5, volume * 0.6, pitch, contextPlayTime];
-      }
+      pan: false,
+      x: 0,
+      y: 0,
+      z: -2,
+      g: 0.5,
+      v: 1.0
     }
+  };
+
+  var EFFECTS = {
+    'none'      : {label:"No Effect", filename:"undefined", dryMix:1, wetMix:0},
+    'spreader1' : {label:"Spreader 1", filename:"spreader50-65ms.wav",        dryMix:0.8, wetMix:1.4},
+    'spreader2' : {label:"Spreader 2", filename:"noise-spreader1.wav",        dryMix:1, wetMix:1},
+    'spring'    : {label:"Spring Reverb", filename:"feedback-spring.wav",     dryMix:1, wetMix:1},
+    'space'     : {label:"Space Oddity", filename:"filter-rhythm3.wav",       dryMix:1, wetMix:0.7},
+    'reverse'   : {label:"Reverse", filename:"spatialized5.wav",              dryMix:1, wetMix:1},
+    'hreverse'  : {label:"Huge Reverse", filename:"matrix6-backwards.wav",    dryMix:0, wetMix:0.7},
+    'telephone' : {label:"Telephone Filter", filename:"filter-telephone.wav", dryMix:0, wetMix:1.2},
+    'lopass'    : {label:"Lopass Filter", filename:"filter-lopass160.wav",    dryMix:0, wetMix:0.5},
+    'hipass'    : {label:"Hipass Filter", filename:"filter-hipass5000.wav",   dryMix:0, wetMix:4.0},
+    'comb1'     : {label:"Comb 1", filename:"comb-saw1.wav",                  dryMix:0, wetMix:0.7},
+    'comb2'     : {label:"Comb 2", filename:"comb-saw2.wav",                  dryMix:0, wetMix:1.0},
+    'cosmic'    : {label:"Cosmic Ping", filename:"cosmic-ping-long.wav",      dryMix:0, wetMix:0.9},
+    'kitchen'   : {label:"Kitchen", filename:"house-impulses/kitchen-true-stereo.wav", dryMix:1, wetMix:1},
+    'livingroom': {label:"Living Room", filename:"house-impulses/dining-living-true-stereo.wav", dryMix:1, wetMix:1},
+    'bedroom'   : {label:"Living-Bedroom", filename:"house-impulses/living-bedroom-leveled.wav", dryMix:1, wetMix:1},
+    'diningroom': {label:"Dining-Far-Kitchen", filename:"house-impulses/dining-far-kitchen.wav", dryMix:1, wetMix:1},
+    'mhall1'    : {label:"Medium Hall 1", filename:"matrix-reverb2.wav",      dryMix:1, wetMix:1},
+    'mhall2'    : {label:"Medium Hall 2", filename:"matrix-reverb3.wav",      dryMix:1, wetMix:1},
+    'lhall'     : {label:"Large Hall", filename:"spatialized4.wav",           dryMix:1, wetMix:0.5},
+    'pecurliar' : {label:"Peculiar", filename:"peculiar-backwards.wav",       dryMix:1, wetMix:1},
+    'backslap'  : {label:"Backslap", filename:"backslap1.wav",                dryMix:1, wetMix:1},
+    'warehouse' : {label:"Warehouse", filename:"tim-warehouse/cardiod-rear-35-10/cardiod-rear-levelled.wav", dryMix:1, wetMix:1},
+    'diffusor'  : {label:"Diffusor", filename:"diffusor3.wav",                dryMix:1, wetMix:1},
+    'bhall'     : {label:"Binaural Hall", filename:"bin_dfeq/s2_r4_bd.wav",   dryMix:1, wetMix:0.5},
+    'huge'      : {label:"Huge", filename:"matrix-reverb6.wav",               dryMix:1, wetMix:0.7},
   };
 
   var KITS = {
@@ -120,7 +173,7 @@
   var NULL_BEAT = {
     'kit': null,
     'tempo': 120,
-    'effect': null,
+    'effect': 'spring',
     'effectMix': 0.25,
     'swingFactor': 0,
     'instruments': {
@@ -154,7 +207,7 @@
   var DEMO_BEAT = {
     'kit': null,
     'tempo': 120,
-    'effect': null,
+    'effect': 'spring',
     'effectMix': 0.2,
     'swingFactor': 0,
     'instruments': {
@@ -186,6 +239,53 @@
   };
 
   /////////////////////////////////////////////////////////////////////////////
+  // HELPERS
+  /////////////////////////////////////////////////////////////////////////////
+
+  function loadSamples(list, context, _loaded, _finished) {
+
+    function preload(name, url, callback) {
+      Utils.AjaxDownload(url, function(data) {
+        context.decodeAudioData(data,
+          function(buffer) {
+            _loaded(false, name, buffer);
+            callback();
+          },
+          function(buffer) {
+            _loaded('Error decoding sample!');
+            callback();
+          }
+        );
+      }, function(err) {
+        _loaded(err);
+      });
+    }
+
+    function next() {
+      var c = null;
+      var o = null;
+      for ( var i in list ) {
+        if ( list.hasOwnProperty(i) ) {
+          c = i;
+          o = list[i];
+          delete list[i];
+          break;
+        }
+      }
+
+      if ( c === null ) {
+        _finished();
+      } else {
+        preload(c, o, function() {
+          next();
+        });
+      }
+    }
+
+    next();
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // SAMPLER
   /////////////////////////////////////////////////////////////////////////////
 
@@ -196,35 +296,9 @@
     opts = opts || {};
     opts.onNote = opts.onNote || function() {};
 
-    var context = new webkitAudioContext();
-    var finalMixNode;
-    if ( context.createDynamicsCompressor ) {
-      var compressor = context.createDynamicsCompressor();
-      compressor.connect(context.destination);
-      finalMixNode = compressor;
-    } else {
-      finalMixNode = context.destination;
-    }
-
-    // Create master volume.
-    var masterGainNode = context.createGain();
-    masterGainNode.gain.value = 0.7; // reduce overall volume to avoid clipping
-    masterGainNode.connect(finalMixNode);
-
-    // Create effect volume.
-    var effectLevelNode = context.createGain();
-    effectLevelNode.gain.value = 1.0; // effect level slider controls this
-    effectLevelNode.connect(masterGainNode);
-
-    // Create convolver for effect
-    var convolver = context.createConvolver();
-    convolver.connect(effectLevelNode);
-
     this.opts            = opts;
     this.kit             = null;
-    this.context         = context;
-    this.masterGainNode  = masterGainNode;
-    this.convolver       = convolver;
+    this.effects         = new Effects();
     this.beat            = null;
     this.playing         = false;
     this.timeout         = null;
@@ -232,15 +306,44 @@
     this.rhythmIndex     = 0;
     this.lastDrawTime    = -1;
     this.noteTime        = 0.0;
+
+    var finalMixNode;
+
+    this.context = new webkitAudioContext();
+    if ( this.context.createDynamicsCompressor ) {
+      var compressor = this.context.createDynamicsCompressor();
+      compressor.connect(this.context.destination);
+      finalMixNode = compressor;
+    } else {
+      finalMixNode = this.context.destination;
+    }
+
+    // Create master volume.
+    this.masterGainNode = this.context.createGain();
+    this.masterGainNode.gain.value = 0.7; // reduce overall volume to avoid clipping
+    this.masterGainNode.connect(finalMixNode);
+
+    // Create effect volume.
+    this.effectLevelNode = this.context.createGain();
+    this.effectLevelNode.gain.value = 1.0; // effect level slider controls this
+    this.effectLevelNode.connect(this.masterGainNode);
+
+    // Create convolver for effect
+    this.convolver = this.context.createConvolver();
+    this.convolver.connect(this.effectLevelNode);
   }
 
   Sampler.prototype.init = function(callback) {
     this.reset();
 
-    this.kit = new Kit(DEFAULT_KIT);
-    this.kit.preload(this.context, function() {
-      callback();
+    var self = this;
+    this.effects.init(this.context, function() {
+      self.kit = new Kit(DEFAULT_KIT);
+      self.kit.preload(self.context, function() {
+        callback();
+      });
     });
+
   };
 
   Sampler.prototype.destroy = function() {
@@ -248,6 +351,16 @@
 
     this.kit = null;
     this.beat = null;
+
+    if ( this.effects ) {
+      this.effects.destroy();
+      this.effects = null;
+    }
+
+    this.context = null;
+    this.masterGainNode = null;
+    this.effectLevelNode = null;
+    this.convolver = null;
   };
 
   Sampler.prototype.load = function(data, callback) {
@@ -255,9 +368,8 @@
 
     this.stop();
     this.beat = (typeof data === 'string') ? JSON.parse(data) : data;
-
-    var kitName = this.beat.kit || DEFAULT_KIT;
-    this.setKit(kitName, callback);
+    this.setEffect(this.beat.effect || DEFAULT_EFFECT);
+    this.setKit(this.beat.kit || DEFAULT_KIT, callback);
   };
 
   Sampler.prototype.reset = function(callback) {
@@ -265,29 +377,27 @@
 
     this.stop();
     this.beat = Utils.cloneObject(NULL_BEAT);
-
+    this.setEffect(DEFAULT_EFFECT);
     this.setKit(DEFAULT_KIT, function() {
       callback();
     });
   };
 
   Sampler.prototype._playNote = function(buffer, pan, x, y, z, sendGain, mainGain, playbackRate, noteTime) {
-    var effectDryMix = 1.0; //this.beat.effectMix;
+    if ( !buffer ) { return; }
 
-    // Create the note
+    var effectDryMix = EFFECTS[this.beat.effect].dryMix;
+
     var voice = this.context.createBufferSource();
     voice.buffer = buffer;
     voice.playbackRate.value = playbackRate;
 
-    // Optionally, connect to a panner
-    var finalNode;
-    if (pan) {
+    var finalNode = voice;
+    if ( pan ) {
       var panner = this.context.createPanner();
       panner.setPosition(x, y, z);
       voice.connect(panner);
       finalNode = panner;
-    } else {
-      finalNode = voice;
     }
 
     // Connect to dry mix
@@ -306,21 +416,34 @@
   };
 
   Sampler.prototype.playNote = function(i, contextPlayTime, rhythmIndex) {
-    var ins    = this.beat.instruments[i];
-    var buffer = this.kit.buffers[i];
-    var volume = VOLUMES[ins.pattern[rhythmIndex]] * 1.0;
-    var pitch  = Math.pow(2.0, 2.0 * (ins.pitch - 0.5));
-    var args   = INSTRUMENTS[i].play(buffer, volume, pitch, contextPlayTime, rhythmIndex);
+    var bins  = this.beat.instruments[i];
+    var value = bins.pattern[rhythmIndex];
 
-    this._playNote.apply(this, args);
+    if ( !value ) {
+      return;
+    }
+
+    var ins = INSTRUMENTS[i];
+
+    this._playNote(this.kit.buffers[i], 
+      ins.pan,
+      (typeof ins.x === 'function') ? ins.x(rhythmIndex) : ins.x,
+      (typeof ins.y === 'function') ? ins.y(rhythmIndex) : ins.y,
+      (typeof ins.z === 'function') ? ins.z(rhythmIndex) : ins.z,
+      ins.g,
+      VOLUMES[value] * ins.v,
+      Math.pow(2.0, 2.0 * (bins.pitch - 0.5)),
+      contextPlayTime
+    );
   };
 
   Sampler.prototype.note = function(contextPlayTime, rhythmIndex) {
-    for ( var i in INSTRUMENTS ) {
-      if ( INSTRUMENTS.hasOwnProperty(i) ) {
-        this.playNote(i, contextPlayTime, rhythmIndex);
-      }
-    }
+    this.playNote('kick', contextPlayTime, rhythmIndex);
+    this.playNote('snare', contextPlayTime, rhythmIndex);
+    this.playNote('hihat', contextPlayTime, rhythmIndex);
+    this.playNote('tom1', contextPlayTime, rhythmIndex);
+    this.playNote('tom2', contextPlayTime, rhythmIndex);
+    this.playNote('tom3', contextPlayTime, rhythmIndex);
   };
 
   Sampler.prototype.tick = function() {
@@ -399,11 +522,36 @@
     this.startTime = this.context.currentTime + 0.005;
     this.noteTime  = 0.0;
 
+    this.setEffect(this.beat.effect);
+
     this.tick();
   };
 
   Sampler.prototype.setNote = function(instrument, col, state) {
     this.beat.instruments[instrument].pattern[col] = state;
+  };
+
+  Sampler.prototype.setEffectLevel = function(val) {
+    if ( !this.beat ) { return; }
+    if ( !this.effectLevelNode ) { return; }
+    if ( typeof val !== 'undefined' ) {
+      this.beat.effectMix = val;
+    }
+    var wm = EFFECTS[this.beat.effect].wetMix;
+    this.effectLevelNode.gain.value = this.beat.effectMix * wm;
+  };
+
+  Sampler.prototype.setEffect = function(name) {
+    if ( this.beat ) {
+      this.beat.effect = name;
+    }
+    if ( this.convolver ) {
+      var b = this.effects.getBuffer(name);
+      if ( b ) {
+        this.convolver.buffer = b;
+      }
+    }
+    this.setEffectLevel(this.beat.effectMix);
   };
 
   Sampler.prototype.setKit = function(name, callback) {
@@ -441,9 +589,48 @@
   };
 
   /////////////////////////////////////////////////////////////////////////////
-  // KITS
+  // EFFECTS
   /////////////////////////////////////////////////////////////////////////////
 
+  /**
+   * @class
+   */
+  function Effects() {
+    this.paths = {};
+    this.buffers = {};
+
+    for ( var i in EFFECTS ) {
+      if ( EFFECTS.hasOwnProperty(i) ) {
+        if ( i === 'none' ) { continue; }
+        this.paths[i] = EFFECT_PATH + EFFECTS[i].filename;
+        this.buffers[i] = null;
+      }
+    }
+  }
+  Effects.prototype.init = function(context, callback) {
+    callback = callback || function() {};
+
+    var list = Utils.cloneObject(this.paths);
+    var self = this;
+
+    loadSamples(list, context, function(err, name, buffer) {
+      self.buffers[name] = buffer || null;
+    }, function() {
+      self.loaded = true;
+      callback();
+    });
+  };
+  Effects.prototype.destroy = function() {
+    this.paths = {};
+    this.buffers = {};
+  };
+  Effects.prototype.getBuffer = function(name) {
+    return this.buffers[name];
+  };
+
+  /////////////////////////////////////////////////////////////////////////////
+  // KITS
+  /////////////////////////////////////////////////////////////////////////////
 
   /**
    * @class
@@ -477,54 +664,12 @@
     var self = this;
     var list = Utils.cloneObject(this.paths);
 
-    function _loaded(err, name, buffer) {
+    loadSamples(list, context, function(err, name, buffer) {
       self.buffers[name] = buffer || null;
-    }
-
-    function _finished() {
+    }, function() {
       self.loaded = true;
       cbFinished();
-    }
-
-    function preload(name, url, callback) {
-      Utils.AjaxDownload(url, function(data) {
-        context.decodeAudioData(data,
-          function(buffer) {
-            _loaded(false, name, buffer);
-            callback();
-          },
-          function(buffer) {
-            _loaded('Error decoding sample!');
-            callback();
-          }
-        );
-      }, function(err) {
-        _loaded(err);
-      });
-    }
-
-    function next() {
-      var c = null;
-      var o = null;
-      for ( var i in list ) {
-        if ( list.hasOwnProperty(i) ) {
-          c = i;
-          o = list[i];
-          delete list[i];
-          break;
-        }
-      }
-
-      if ( c === null ) {
-        _finished();
-      } else {
-        preload(c, o, function() {
-          next();
-        });
-      }
-    }
-
-    next();
+    });
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -625,11 +770,23 @@
       }
     }
 
+    var effectMenu = [];
+    for ( var e in EFFECTS  ) {
+      if ( EFFECTS.hasOwnProperty(e) ) {
+        effectMenu.push({
+          title: EFFECTS[e].label,
+          name: 'SelectEffect' + e,
+          onClick: (function(eff) {
+            return function() {
+              self.onEffectSelect(eff);
+            };
+          })(e)
+        });
+      }
+    }
+
     menuBar.addItem(OSjs._('Select Kit'), kitMenu);
-    menuBar.addItem(OSjs._('Select Effect'), [
-      {title: OSjs._('Not implemented yet'), name: 'EffectNone', onClick: function() {
-      }}
-    ]);
+    menuBar.addItem(OSjs._('Select Effect'), effectMenu);
 
     menuBar.addItem(OSjs._('Play/Pause'));
     menuBar.addItem(OSjs._('Tempo -'));
@@ -757,6 +914,12 @@
     }
   };
 
+  ApplicationDrumSamplerWindow.prototype.onEffectSelect = function(name) {
+    if ( !this.sampler ) { return; }
+    this.sampler.setEffect(name);
+    this.updateStatusBar();
+  };
+
   ApplicationDrumSamplerWindow.prototype.onKitSelect = function(name) {
     if ( !this.sampler ) { return; }
     var self = this;
@@ -794,6 +957,7 @@
 
   ApplicationDrumSamplerWindow.prototype.onSliderUpdate = function(s, val) {
     if ( !this.sampler || !this.sampler.beat ) { return; }
+    var oval = val;
     val /= 100;
 
     switch ( s ) {
@@ -802,6 +966,7 @@
       break;
       case 'effect' :
         this.sampler.beat.effectMix = val;
+        this.sampler.setEffectLevel(val);
       break;
 
       default :
@@ -886,10 +1051,11 @@
     if ( !this.sampler ) { return; }
 
     if ( this.statusBar ) {
-      var kitName = this.sampler.beat.kit;
+      var kitName = KITS[this.sampler.beat.kit];
       var tempo   = this.sampler.beat.tempo;
+      var effect  = EFFECTS[this.sampler.beat.effect || DEFAULT_EFFECT].label;
 
-      var txt = Utils.format('Kit: {0} | Tempo: {1}', kitName, tempo);
+      var txt = Utils.format('Kit: {0} | Effect: {1} | Tempo: {2}', kitName, effect, tempo);
       this.statusBar.setText(txt);
     }
   };
@@ -945,12 +1111,14 @@
 
     var rootName = OSjs.API.getApplicationResource(this, '');
     SAMPLE_PATH = rootName + 'drum-samples/';
+    EFFECT_PATH = rootName + 'impulse-responses/';
   };
 
   ApplicationDrumSampler.prototype = Object.create(Application.prototype);
 
   ApplicationDrumSampler.prototype.destroy = function() {
     // Destroy communication, timers, objects etc. here
+    this.mainWindow = null;
 
     return Application.prototype.destroy.apply(this, arguments);
   };

@@ -97,8 +97,7 @@
   // EXPORTS
   //
   OSjs.Applications = OSjs.Applications || {};
-  OSjs.Applications.ApplicationDrumSamplerLibs = {
-    ToggleButton: ToggleButton
-  };
+  OSjs.Applications.ApplicationDrumSampler = OSjs.Applications.ApplicationDrumSampler || {};
+  OSjs.Applications.ApplicationDrumSampler.ToggleButton = ToggleButton;
 
 })(OSjs.Core.Application, OSjs.Core.Window, OSjs.GUI, OSjs.Dialogs);

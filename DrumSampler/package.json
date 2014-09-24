@@ -6,6 +6,7 @@
     "category":   "multimedia",
     "preload":    [
       {"src": "gui.js", "type": "javascript"},
+      {"src": "sampler.js", "type": "javascript"},
       {"src": "main.js", "type": "javascript"},
       {"src": "main.css", "type": "stylesheet"}
     ]

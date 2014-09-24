@@ -13,7 +13,7 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution. 
  * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
@@ -38,6 +38,7 @@
   // GLOBALS
   /////////////////////////////////////////////////////////////////////////////
 
+  var SAMPLE_PATH = '/'; // Set later
   var MIN_TEMPO   = 50;
   var MAX_TEMPO   = 180;
   var MAX_SWING   = 0.08;
@@ -54,70 +55,90 @@
     'Kick'
   ];
 
+  var DEFAULT_KIT = 'R8';
+  var KITS = {
+    'R8': 'Roland R-8',
+    'CR78': 'Roland CR-78',
+    'KPR77': 'Korg KPR-77',
+    'LINN': 'LinnDrum',
+    'Kit3': 'Kit 3',
+    'Kit8': 'Kit 8',
+    'Techno': 'Techno',
+    'Stark': 'Stark',
+    'breakbeat8': 'Breakbeat 8',
+    'breakbeat9': 'Breakbeat 9',
+    'breakbeat13': 'Breakbeat 13',
+    'acoustic-kit': 'Acoustic Kit',
+    '4OP-FM': '4OP-FM',
+    'TheCheebacabra1': 'The Cheebacabra 1',
+    'TheCheebacabra2': 'The Cheebacabra 2'
+  };
+
+
   var NULL_BEAT = {
-    "kit": null,
-    "tempo": 120,
-    "effect": null,
-    "effectMix": 0.25,
-    "swingFactor": 0,
-    "instruments": [
+    'kit': null,
+    'tempo': 120,
+    'effect': null,
+    'effectMix': 0.25,
+    'swingFactor': 0,
+    'instruments': [
       {
-        "pitch": 0.5,
-        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        'pitch': 0.5,
+        'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       },
       {
-        "pitch": 0.5,
-        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        'pitch': 0.5,
+        'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       },
       {
-        "pitch": 0.5,
-        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        'pitch': 0.5,
+        'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       },
       {
-        "pitch": 0.5,
-        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        'pitch': 0.5,
+        'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       },
       {
-        "pitch": 0.5,
-        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        'pitch': 0.5,
+        'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       },
       {
-        "pitch": 0.5,
-        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        'pitch': 0.5,
+        'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       }
     ]
   };
 
   var DEMO_BEAT = {
-    "kit": null,
-    "tempo": 120,
-    "effect": null,
-    "effectMix": 0.25,
-    "swingFactor": 0,
-    "instruments": [
+    'kit': null,
+    'tempo': 120,
+    'effect': null,
+    'effectMix': 0.25,
+    'swingFactor': 0,
+    'instruments': [
       {
-        "pitch": 0.5,
-        "pattern": [0,0,0,0,0,0,0,2,0,2,2,0,0,0,0,0]
+        'pitch': 0.5,
+        'pattern': [0,0,0,0,0,0,0,2,0,2,2,0,0,0,0,0]
       },
       {
-        "pitch": 0.5,
-        "pattern": [0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        'pitch': 0.5,
+        'pattern': [0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0]
       },
       {
-        "pitch": 0.5,
-        "pattern": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0]
+        'pitch': 0.5,
+        'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0]
       },
       {
-        "pitch": 0.5,
-        "pattern": [0,0,0,0,0,0,2,0,2,0,0,0,0,0,0,0]
+        'pitch': 0.5,
+        'pattern': [0,0,0,0,0,0,2,0,2,0,0,0,0,0,0,0]
       },
       {
-        "pitch": 0.5,
-        "pattern": [0,0,0,0,2,0,0,0,0,0,0,0,2,0,0,0]
+        'pitch': 0.5,
+        'pattern': [0,0,0,0,2,0,0,0,0,0,0,0,2,0,0,0]
       },
       {
-        "pitch": 0.5,
-        "pattern": [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        'pitch': 0.5,
+        'pattern': [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       }
     ]
   };
@@ -129,7 +150,7 @@
   /**
    * @class
    */
-  function Sampler(opts, app) {
+  function Sampler(opts) {
     opts = opts || {};
     opts.onNote = opts.onNote || function() {};
 
@@ -158,11 +179,11 @@
     convolver.connect(effectLevelNode);
 
     this.opts            = opts;
-    this.kit             = new Kit('default', app);
+    this.kit             = null;
     this.context         = context;
     this.masterGainNode  = masterGainNode;
     this.convolver       = convolver;
-    this.beat            = DEMO_BEAT;
+    this.beat            = null;
     this.playing         = false;
     this.timeout         = null;
     this.startTime       = null;
@@ -172,6 +193,9 @@
   }
 
   Sampler.prototype.init = function(callback) {
+    this.reset();
+
+    this.kit = new Kit(DEFAULT_KIT);
     this.kit.preload(this.context, function() {
       callback();
     });
@@ -184,14 +208,25 @@
     this.beat = null;
   };
 
-  Sampler.prototype.load = function(data) {
+  Sampler.prototype.load = function(data, callback) {
+    callback = callback || function() {};
+
     this.stop();
     this.beat = (typeof data === 'string') ? JSON.parse(data) : data;
+
+    var kitName = this.beat.kit || DEFAULT_KIT;
+    this.setKit(kitName, callback);
   };
 
-  Sampler.prototype.reset = function() {
+  Sampler.prototype.reset = function(callback) {
+    callback = callback || function() {};
+
     this.stop();
-    this.beat = NULL_BEAT;
+    this.beat = Utils.cloneObject(NULL_BEAT);
+
+    this.setKit(DEFAULT_KIT, function() {
+      callback();
+    });
   };
 
   Sampler.prototype.note = function(contextPlayTime, rhythmIndex) {
@@ -341,7 +376,7 @@
     this.stop();
 
     if ( !this.context ) {
-      throw "Cannot play, no context";
+      throw 'Cannot play, no context';
     }
 
     this.playing   = true;
@@ -353,6 +388,36 @@
 
   Sampler.prototype.setNote = function(row, col, state) {
     this.beat.instruments[row].pattern[col] = state;
+  };
+
+  Sampler.prototype.setKit = function(name, callback) {
+    callback = callback || function() {};
+
+    var self = this;
+    var wasPlaying = this.playing;
+
+    if ( KITS[name] ) {
+      /*
+      if ( this.kit && this.kit.name === name ) {
+        callback();
+        return;
+      }
+      */
+
+      this.stop();
+      if ( this.beat ) {
+        this.beat.kit = name;
+      }
+
+      this.kit = new Kit(name);
+      this.kit.preload(this.context, function() {
+        callback();
+
+        if ( wasPlaying ) {
+          self.play();
+        }
+      });
+    }
   };
 
   Sampler.prototype.getData = function() {
@@ -367,18 +432,19 @@
   /**
    * @class
    */
-  function Kit(name, app) {
-    var rootName = OSjs.API.getApplicationResource(app, "");
-    var kitName  = "R8";
-    var pathName = rootName + "drum-samples/" + kitName + "/";
+  function Kit(name) {
+    var pathName = SAMPLE_PATH + name + '/';
+
+    this.name   = name;
+    this.loaded = false;
 
     this.paths = {
-      kick: pathName  + "kick.wav",
-      snare: pathName + "snare.wav",
-      hihat: pathName + "hihat.wav",
-      tom1: pathName  + "tom1.wav",
-      tom2: pathName  + "tom2.wav",
-      tom3: pathName  + "tom3.wav"
+      kick:  pathName + 'kick.wav',
+      snare: pathName + 'snare.wav',
+      hihat: pathName + 'hihat.wav',
+      tom1:  pathName + 'tom1.wav',
+      tom2:  pathName + 'tom2.wav',
+      tom3:  pathName + 'tom3.wav'
     };
 
     this.buffers = {
@@ -393,33 +459,33 @@
 
   Kit.prototype.preload = function(context, cbFinished) {
     var self = this;
+    var list = Utils.cloneObject(this.paths);
 
-    function cbLoaded(err, name, buffer) {
+    function _loaded(err, name, buffer) {
       self.buffers[name] = buffer || null;
     }
 
-    function preload(name, url, callback) {
-      var request = new XMLHttpRequest();
-      request.open("GET", url, true);
-      request.responseType = "arraybuffer";
+    function _finished() {
+      self.loaded = true;
+      cbFinished();
+    }
 
-      request.onload = function() {
-        context.decodeAudioData(request.response,
+    function preload(name, url, callback) {
+      Utils.AjaxDownload(url, function(data) {
+        context.decodeAudioData(data,
           function(buffer) {
-            cbLoaded(false, name, buffer);
+            _loaded(false, name, buffer);
             callback();
           },
           function(buffer) {
-            cbLoaded("Error decoding sample!");
+            _loaded('Error decoding sample!');
             callback();
           }
         );
-      }
-
-      request.send();
+      }, function(err) {
+        _loaded(err);
+      });
     }
-
-    var list = JSON.parse(JSON.stringify(this.paths));
 
     function next() {
       var c = null;
@@ -434,7 +500,7 @@
       }
 
       if ( c === null ) {
-        cbFinished();
+        _finished();
       } else {
         preload(c, o, function() {
           next();
@@ -455,9 +521,10 @@
   var ApplicationDrumSamplerWindow = function(app, metadata) {
     var self = this;
 
-    Window.apply(this, ['ApplicationDrumSamplerWindow', {width: 600, height: 240}, app]);
+    Window.apply(this, ['ApplicationDrumSamplerWindow', {width: 600, height: 280}, app]);
 
     this.$table        = null;
+    this.statusBar     = null;
     this.buttons       = [];
     this.title         = metadata.name + ' v0.1';
     this.sampler       = new Sampler({
@@ -488,31 +555,54 @@
       onMenuOpen: function(elem, pos, item) {
         if ( item === 'Play/Pause' ) {
           self.onPlayPressed();
+        } else if ( item === 'Tempo -' ) {
+          self.onTempoButton(false);
+        } else if ( item === 'Tempo +' ) {
+          self.onTempoButton(true);
         }
       }
     }), root);
-    menuBar.addItem(OSjs._("File"), [
+    menuBar.addItem(OSjs._('File'), [
       {title: OSjs._('New'), name: 'New', onClick: function() {
-        app.action("new");
+        app.action('new');
       }},
       {title: OSjs._('Load demo track'), name: 'LoadDemo', onClick: function() {
-        self.doOpen(null, DEMO_BEAT);
+        self.doOpen(null, Utils.cloneObject(DEMO_BEAT));
       }},
       {title: OSjs._('Open'), name: 'Open', onClick: function() {
-        app.action("open");
+        app.action('open');
       }},
       {title: OSjs._('Save'), name: 'Save', onClick: function() {
-        app.action("save");
+        app.action('save');
       }},
       {title: OSjs._('Save As...'), name: 'SaveAs', onClick: function() {
-        app.action("saveas");
+        app.action('saveas');
       }},
       {title: OSjs._('Close'), name: 'Close', onClick: function() {
-        app.action("close");
+        app.action('close');
       }}
     ]);
 
-    menuBar.addItem(OSjs._("Play/Pause"));
+    var kitMenu = [];
+    for ( var k in KITS  ) {
+      if ( KITS.hasOwnProperty(k) ) {
+        kitMenu.push({
+          title: KITS[k] + ' (' + k + ')',
+          name: 'SelectKit' + k,
+          onClick: (function(kit) {
+            return function() {
+              self.onKitSelect(kit);
+            };
+          })(k)
+        });
+      }
+    }
+
+    menuBar.addItem(OSjs._('Select Kit'), kitMenu);
+
+    menuBar.addItem(OSjs._('Play/Pause'));
+    menuBar.addItem(OSjs._('Tempo -'));
+    menuBar.addItem(OSjs._('Tempo +'));
 
     function createOnClick(idx, row, col) {
       return function(ev, state) {
@@ -550,6 +640,9 @@
 
     this.$table = table;
 
+    // Statusbar
+    this.statusBar = this._addGUIElement(new GUI.StatusBar('ApplicationDrumSamplerStatusBar', {}), root);
+
     return root;
   };
 
@@ -565,6 +658,8 @@
     this.sampler.init(function() {
       self._toggleDisabled(false);
       self.doDraw();
+
+      self.updateStatusBar();
     });
   };
 
@@ -585,6 +680,7 @@
     this.buttons = [];
 
     Window.prototype.destroy.apply(this, arguments);
+    this.statusBar = null;
   };
 
   ApplicationDrumSamplerWindow.prototype.onPlayPressed = function() {
@@ -593,10 +689,36 @@
     }
   };
 
+  ApplicationDrumSamplerWindow.prototype.onKitSelect = function(name) {
+    if ( !this.sampler ) { return; }
+    var self = this;
+    this._toggleDisabled(true);
+    this.sampler.setKit(name, function() {
+      self._toggleDisabled(false);
+      self.updateStatusBar();
+    });
+  };
+
   ApplicationDrumSamplerWindow.prototype.onButtonToggle = function(ev, idx, row, col, state) {
     if ( !this.sampler ) { return; }
 
     this.sampler.setNote(row, col, state);
+  };
+
+  ApplicationDrumSamplerWindow.prototype.onTempoButton = function(inc) {
+    if ( !this.sampler ) { return; }
+    var cur = this.sampler.beat.tempo;
+    if ( inc ) {
+      if ( cur < MAX_TEMPO ) {
+        cur += 10;
+      }
+    } else {
+      if ( cur > MIN_TEMPO ) {
+        cur -= 10;
+      }
+    }
+    this.sampler.beat.tempo = cur;
+    this.updateStatusBar();
   };
 
   ApplicationDrumSamplerWindow.prototype.doDraw = function() {
@@ -614,12 +736,17 @@
   };
 
   ApplicationDrumSamplerWindow.prototype.doNew = function() {
-    if ( this.sampler ) {
-      this.sampler.reset();
-    }
-    this.doDraw();
+    if ( !this.sampler ) { return; }
+    var self = this;
 
-    this.updateTitle(null);
+    this._toggleDisabled(true);
+    this.sampler.reset(function() {
+      self.doDraw();
+      self.updateTitle(null);
+      self.updateStatusBar();
+      self._toggleDisabled(false);
+    });
+
   };
 
   ApplicationDrumSamplerWindow.prototype.doSave = function(filename, data) {
@@ -627,11 +754,28 @@
   };
 
   ApplicationDrumSamplerWindow.prototype.doOpen = function(filename, data) {
-    if ( this.sampler ) {
-      this.sampler.load(data);
+    if ( !this.sampler ) { return; }
+    var self = this;
+
+    this._toggleDisabled(true);
+    this.sampler.load(data, function() {
+      self.doDraw();
+      self.updateTitle(filename);
+      self.updateStatusBar();
+      self._toggleDisabled(false);
+    });
+  };
+
+  ApplicationDrumSamplerWindow.prototype.updateStatusBar = function() {
+    if ( !this.sampler ) { return; }
+
+    if ( this.statusBar ) {
+      var kitName = this.sampler.beat.kit;
+      var tempo   = this.sampler.beat.tempo;
+
+      var txt = Utils.format('Kit: {0} | Tempo: {1}', kitName, tempo);
+      this.statusBar.setText(txt);
     }
-    this.doDraw();
-    this.updateTitle(filename);
   };
 
   ApplicationDrumSamplerWindow.prototype.updateTitle = function(filename) {
@@ -681,6 +825,9 @@
     this.dialogOptions.mime = 'osjs/dbeat';
     this.dialogOptions.mimes = metadata.mime;
     this.dialogOptions.defaultFilename = 'New Beat.odbeat';
+
+    var rootName = OSjs.API.getApplicationResource(this, '');
+    SAMPLE_PATH = rootName + 'drum-samples/';
   };
 
   ApplicationDrumSampler.prototype = Object.create(Application.prototype);

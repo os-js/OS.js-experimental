@@ -38,24 +38,66 @@
   // GLOBALS
   /////////////////////////////////////////////////////////////////////////////
 
-  var SAMPLE_PATH = '/'; // Set later
-  var MIN_TEMPO   = 50;
-  var MAX_TEMPO   = 180;
-  var MAX_SWING   = 0.08;
-  var TRACKS      = 16;
-  var INSTRUMENTS = 6;
-  var VOLUMES     = [0, 0.3, 1];
+  var SAMPLE_PATH      = '/'; // Set later
+  var MIN_TEMPO        = 50;
+  var MAX_TEMPO        = 180;
+  var MAX_SWING        = 0.08;
+  var TRACKS           = 16;
+  var INSTRUMENT_COUNT = 6;
+  var INSTRUMENT_ORDER = ['tom1', 'tom2', 'tom3', 'hihat', 'snare', 'kick'];
+  var VOLUMES          = [0, 0.3, 1];
+  var DEFAULT_KIT      = 'R8';
 
-  var LABELS      = [
-    'Tom 1',
-    'Tom 2',
-    'Tom 3',
-    'Hi-Hat',
-    'Snare',
-    'Kick'
-  ];
+  var SLIDER_LABELS = {
+    swing: 'Swing Level',
+    effect: 'Effect Level',
+    kickPitch: 'Kick Pitch',
+    snarePitch: 'Snare Pitch',
+    hihatPitch: 'Hi-Hat Pitch',
+    tom1Pitch: 'Tom 1 Pitch',
+    tom2Pitch: 'Tom 2 Pitch',
+    tom3Pitch: 'Tom 3 Pitch'
+  };
 
-  var DEFAULT_KIT = 'R8';
+  var INSTRUMENTS = {
+    'tom1' : {
+      label: 'Tom 1',
+      play: function(buffer, volume, pitch, contextPlayTime, rhythmIndex) {
+        return [buffer, false, 0,0,-2, 1, volume * 0.6, pitch, contextPlayTime];
+      }
+    },
+    'tom2' : {
+      label: 'Tom 2',
+      play: function(buffer, volume, pitch, contextPlayTime, rhythmIndex) {
+        return [buffer, false, 0,0,-2, 1, volume * 0.6, pitch, contextPlayTime];
+      }
+    },
+    'tom3' : {
+      label: 'Tom 3',
+      play: function(buffer, volume, pitch, contextPlayTime, rhythmIndex) {
+        return [buffer, false, 0,0,-2, 1, volume * 0.6, pitch, contextPlayTime];
+      }
+    },
+    'hihat' : {
+      label: 'Hi-Hat',
+      play: function(buffer, volume, pitch, contextPlayTime, rhythmIndex) {
+        return [buffer, true, 0.5*rhythmIndex - 4, 0, -1.0, 1, volume * 0.6, pitch, contextPlayTime];
+      }
+    },
+    'snare' : {
+      label: 'Snare',
+      play: function(buffer, volume, pitch, contextPlayTime, rhythmIndex) {
+        return [buffer, false, 0,0,-2, 1, volume * 0.6, pitch, contextPlayTime];
+      }
+    },
+    'kick' : {
+      label: 'Kick',
+      play: function(buffer, volume, pitch, contextPlayTime, rhythmIndex) {
+        return [buffer, false, 0,0,-2, 0.5, volume * 0.6, pitch, contextPlayTime];
+      }
+    }
+  };
+
   var KITS = {
     'R8': 'Roland R-8',
     'CR78': 'Roland CR-78',
@@ -81,66 +123,66 @@
     'effect': null,
     'effectMix': 0.25,
     'swingFactor': 0,
-    'instruments': [
-      {
+    'instruments': {
+      'tom1' : {
         'pitch': 0.5,
         'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       },
-      {
+      'tom2' : {
         'pitch': 0.5,
         'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       },
-      {
+      'tom3' : {
         'pitch': 0.5,
         'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       },
-      {
+      'hihat' : {
         'pitch': 0.5,
         'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       },
-      {
+      'snare' : {
         'pitch': 0.5,
         'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       },
-      {
+      'kick' : {
         'pitch': 0.5,
         'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       }
-    ]
+    }
   };
 
   var DEMO_BEAT = {
     'kit': null,
     'tempo': 120,
     'effect': null,
-    'effectMix': 0.25,
+    'effectMix': 0.2,
     'swingFactor': 0,
-    'instruments': [
-      {
-        'pitch': 0.5,
+    'instruments': {
+      'tom3' : {
+        'pitch': 0.8028169014084507,
         'pattern': [0,0,0,0,0,0,0,2,0,2,2,0,0,0,0,0]
       },
-      {
-        'pitch': 0.5,
+      'tom2' : {
+        'pitch': 0.704225352112676,
         'pattern': [0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0]
       },
-      {
-        'pitch': 0.5,
+      'tom1' : {
+        'pitch': 0.7183098591549295,
         'pattern': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0]
       },
-      {
-        'pitch': 0.5,
+      'hihat' : {
+        'pitch': 0.15492957746478875,
         'pattern': [0,0,0,0,0,0,2,0,2,0,0,0,0,0,0,0]
       },
-      {
-        'pitch': 0.5,
+      'snare' : {
+        'pitch': 0.45070422535211263,
         'pattern': [0,0,0,0,2,0,0,0,0,0,0,0,2,0,0,0]
       },
-      {
-        'pitch': 0.5,
+      'kick' : {
+        'pitch': 0.46478873239436624,
         'pattern': [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
       }
-    ]
+    }
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -229,82 +271,57 @@
     });
   };
 
-  Sampler.prototype.note = function(contextPlayTime, rhythmIndex) {
-    var effectDryMix = 1.0;
-    var effectWetMix = 1.0;
+  Sampler.prototype._playNote = function(buffer, pan, x, y, z, sendGain, mainGain, playbackRate, noteTime) {
+    var effectDryMix = 1.0; //this.beat.effectMix;
 
-    var kickPitch = 0;
-    var snarePitch = 0;
-    var hihatPitch = 0;
-    var tom1Pitch = 0;
-    var tom2Pitch = 0;
-    var tom3Pitch = 0;
+    // Create the note
+    var voice = this.context.createBufferSource();
+    voice.buffer = buffer;
+    voice.playbackRate.value = playbackRate;
 
-    function playNote(buffer, pan, x, y, z, sendGain, mainGain, playbackRate, noteTime) {
-      // Create the note
-      var voice = this.context.createBufferSource();
-      voice.buffer = buffer;
-      voice.playbackRate.value = playbackRate;
-
-      // Optionally, connect to a panner
-      var finalNode;
-      if (pan) {
-        var panner = this.context.createPanner();
-        panner.setPosition(x, y, z);
-        voice.connect(panner);
-        finalNode = panner;
-      } else {
-        finalNode = voice;
-      }
-
-      // Connect to dry mix
-      var dryGainNode = this.context.createGain();
-      dryGainNode.gain.value = mainGain * effectDryMix;
-      finalNode.connect(dryGainNode);
-      dryGainNode.connect(this.masterGainNode);
-
-      // Connect to wet mix
-      var wetGainNode = this.context.createGain();
-      wetGainNode.gain.value = sendGain;
-      finalNode.connect(wetGainNode);
-      wetGainNode.connect(this.convolver);
-
-      voice.start(noteTime);
+    // Optionally, connect to a panner
+    var finalNode;
+    if (pan) {
+      var panner = this.context.createPanner();
+      panner.setPosition(x, y, z);
+      voice.connect(panner);
+      finalNode = panner;
+    } else {
+      finalNode = voice;
     }
 
-    var ins = this.beat.instruments;
+    // Connect to dry mix
+    var dryGainNode = this.context.createGain();
+    dryGainNode.gain.value = mainGain * effectDryMix;
+    finalNode.connect(dryGainNode);
+    dryGainNode.connect(this.masterGainNode);
 
-    // Kick
-    if (this.beat.instruments[5].pattern[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.kick, false, 0,0,-2, 0.5, VOLUMES[this.beat.instruments[5].pattern[rhythmIndex]] * 1.0, kickPitch, contextPlayTime);
-    }
+    // Connect to wet mix
+    var wetGainNode = this.context.createGain();
+    wetGainNode.gain.value = sendGain;
+    finalNode.connect(wetGainNode);
+    wetGainNode.connect(this.convolver);
 
-    // Snare
-    if (this.beat.instruments[4].pattern[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.snare, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[4].pattern[rhythmIndex]] * 0.6, snarePitch, contextPlayTime);
-    }
-
-    // Hihat
-    if (this.beat.instruments[3].pattern[rhythmIndex]) {
-      // Pan the hihat according to sequence position.
-      playNote.call(this, this.kit.buffers.hihat, true, 0.5*rhythmIndex - 4, 0, -1.0, 1, VOLUMES[this.beat.instruments[3].pattern[rhythmIndex]] * 0.7, hihatPitch, contextPlayTime);
-    }
-
-    // Toms
-    if (this.beat.instruments[2].pattern[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.tom1, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[2].pattern[rhythmIndex]] * 0.6, tom1Pitch, contextPlayTime);
-    }
-
-    if (this.beat.instruments[1].pattern[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.tom2, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[1].pattern[rhythmIndex]] * 0.6, tom2Pitch, contextPlayTime);
-    }
-
-    if (this.beat.instruments[0].pattern[rhythmIndex]) {
-      playNote.call(this, this.kit.buffers.tom3, false, 0,0,-2, 1, VOLUMES[this.beat.instruments[0].pattern[rhythmIndex]] * 0.6, tom3Pitch, contextPlayTime);
-    }
-
+    voice.start(noteTime);
   };
 
+  Sampler.prototype.playNote = function(i, contextPlayTime, rhythmIndex) {
+    var ins    = this.beat.instruments[i];
+    var buffer = this.kit.buffers[i];
+    var volume = VOLUMES[ins.pattern[rhythmIndex]] * 1.0;
+    var pitch  = Math.pow(2.0, 2.0 * (ins.pitch - 0.5));
+    var args   = INSTRUMENTS[i].play(buffer, volume, pitch, contextPlayTime, rhythmIndex);
+
+    this._playNote.apply(this, args);
+  };
+
+  Sampler.prototype.note = function(contextPlayTime, rhythmIndex) {
+    for ( var i in INSTRUMENTS ) {
+      if ( INSTRUMENTS.hasOwnProperty(i) ) {
+        this.playNote(i, contextPlayTime, rhythmIndex);
+      }
+    }
+  };
 
   Sampler.prototype.tick = function() {
     function advanceNote() {
@@ -386,8 +403,8 @@
     this.tick();
   };
 
-  Sampler.prototype.setNote = function(row, col, state) {
-    this.beat.instruments[row].pattern[col] = state;
+  Sampler.prototype.setNote = function(instrument, col, state) {
+    this.beat.instruments[instrument].pattern[col] = state;
   };
 
   Sampler.prototype.setKit = function(name, callback) {
@@ -521,12 +538,23 @@
   var ApplicationDrumSamplerWindow = function(app, metadata) {
     var self = this;
 
-    Window.apply(this, ['ApplicationDrumSamplerWindow', {width: 600, height: 280}, app]);
+    Window.apply(this, ['ApplicationDrumSamplerWindow', {width: 550, height: 490}, app]);
 
     this.$table        = null;
+    this.$scontainer   = null;
     this.statusBar     = null;
     this.buttons       = [];
-    this.title         = metadata.name + ' v0.1';
+    this.sliders       = {
+      swing: null,
+      effect: null,
+      kickPitch: null,
+      snarePitch: null,
+      hihatPitch: null,
+      tom1Pitch: null,
+      tom2Pitch: null,
+      tom3Pitch: null
+    };
+    this.title         = metadata.name + ' v0.2';
     this.sampler       = new Sampler({
       onNote: function(idx, time) {
         self.handleHighlight(idx, time);
@@ -599,28 +627,33 @@
     }
 
     menuBar.addItem(OSjs._('Select Kit'), kitMenu);
+    menuBar.addItem(OSjs._('Select Effect'), [
+      {title: OSjs._('Not implemented yet'), name: 'EffectNone', onClick: function() {
+      }}
+    ]);
 
     menuBar.addItem(OSjs._('Play/Pause'));
     menuBar.addItem(OSjs._('Tempo -'));
     menuBar.addItem(OSjs._('Tempo +'));
 
-    function createOnClick(idx, row, col) {
+    function createOnClick(idx, instrument, col) {
       return function(ev, state) {
-        self.onButtonToggle(ev, idx, row, col, state);
+        self.onButtonToggle(ev, idx, instrument, col, state);
       };
     }
 
     var table = document.createElement('div');
     table.className = 'Table';
 
-    var x, y, row, col, i = 0;
-    for ( y = 0; y < INSTRUMENTS; y++ ) {
+    var x, y, row, col, i = 0, instrument;
+    for ( y = 0; y < INSTRUMENT_COUNT; y++ ) {
+      instrument = INSTRUMENT_ORDER[y];
       row = document.createElement('div');
       row.className = 'Row';
 
       col = document.createElement('div');
       col.className = 'Col Label';
-      col.appendChild(document.createTextNode(LABELS[y]));
+      col.appendChild(document.createTextNode(INSTRUMENTS[instrument].label));
       row.appendChild(col);
 
       for ( x = 0; x < TRACKS; x++ ) {
@@ -628,7 +661,7 @@
         col.className = 'Col';
         row.appendChild(col);
 
-        this.buttons.push(this._addGUIElement(new ToggleButton('TrackButton_' + i.toString(), {onClick: createOnClick(i, y, x)}), col));
+        this.buttons.push(this._addGUIElement(new ToggleButton('TrackButton_' + i.toString(), {onClick: createOnClick(i, instrument, x)}), col));
 
         i++;
       }
@@ -640,8 +673,37 @@
 
     this.$table = table;
 
+    // Sliders
+    var sliderContainer = document.createElement('div');
+    sliderContainer.className = 'Sliders';
+
+    var container, label, smin, smax;
+    for ( var s in this.sliders ) {
+      if ( this.sliders.hasOwnProperty(s) ) {
+        container = document.createElement('div');
+        container.className = 'Container';
+
+        label = document.createElement('div');
+        label.className = 'Label';
+        label.appendChild(document.createTextNode(SLIDER_LABELS[s]));
+
+        container.appendChild(label);
+
+        this.sliders[s] = this._addGUIElement(new GUI.Slider('Slider_' + s, {orientation: 'vertical', onUpdate: (function(sname) {
+          return function(val) {
+            self.onSliderUpdate(sname, val);
+          };
+        })(s), min: 0, max: 100}), container);
+
+        sliderContainer.appendChild(container);
+      }
+    }
+    this.$scontainer = sliderContainer;
+    root.appendChild(this.$scontainer);
+
     // Statusbar
     this.statusBar = this._addGUIElement(new GUI.StatusBar('ApplicationDrumSamplerStatusBar', {}), root);
+    this.statusBar.setText('Loading assets...');
 
     return root;
   };
@@ -660,6 +722,7 @@
       self.doDraw();
 
       self.updateStatusBar();
+      self.updateControls();
     });
   };
 
@@ -675,6 +738,12 @@
         this.$table.parentNode.removeChild(this.$table);
       }
       this.$table = null;
+    }
+    if ( this.$scontainer ) {
+      if ( this.$scontainer.parentNode ) {
+        this.$scontainer.parentNode.removeChild(this.$scontainer);
+      }
+      this.$scontainer = null;
     }
 
     this.buttons = [];
@@ -696,13 +765,15 @@
     this.sampler.setKit(name, function() {
       self._toggleDisabled(false);
       self.updateStatusBar();
+      self.updateControls();
     });
   };
 
-  ApplicationDrumSamplerWindow.prototype.onButtonToggle = function(ev, idx, row, col, state) {
+  ApplicationDrumSamplerWindow.prototype.onButtonToggle = function(ev, idx, instrument, col, state) {
     if ( !this.sampler ) { return; }
 
-    this.sampler.setNote(row, col, state);
+    this.sampler.setNote(instrument, col, state);
+    this.sampler.playNote(instrument, 0, col);
   };
 
   ApplicationDrumSamplerWindow.prototype.onTempoButton = function(inc) {
@@ -719,6 +790,28 @@
     }
     this.sampler.beat.tempo = cur;
     this.updateStatusBar();
+    this.updateControls();
+  };
+
+  ApplicationDrumSamplerWindow.prototype.onSliderUpdate = function(s, val) {
+    if ( !this.sampler || !this.sampler.beat ) { return; }
+    val /= 100;
+
+    switch ( s ) {
+      case 'swing' :
+        this.sampler.beat.swingFactor = val;
+      break;
+      case 'effect' :
+        this.sampler.beat.effectMix = val;
+      break;
+
+      default :
+        if ( s.match(/Pitch$/) ) {
+          s = s.replace(/Pitch$/, '');
+          this.sampler.beat.instruments[s].pitch = val;
+        }
+      break;
+    }
   };
 
   ApplicationDrumSamplerWindow.prototype.doDraw = function() {
@@ -726,11 +819,13 @@
     var b = this.sampler.beat;
     var a, l, j, t = 0;
 
-    for ( var i = 0; i < INSTRUMENTS; i++ ) {
-      a = b.instruments[i];
-      for ( j = 0; j < TRACKS; j++ ) {
-        this.buttons[t].setState(a.pattern[j]);
-        t++;
+    for ( var i in INSTRUMENTS ) {
+      if ( INSTRUMENTS.hasOwnProperty(i) ) {
+        a = b.instruments[i];
+        for ( j = 0; j < TRACKS; j++ ) {
+          this.buttons[t].setState(a.pattern[j]);
+          t++;
+        }
       }
     }
   };
@@ -744,6 +839,7 @@
       self.doDraw();
       self.updateTitle(null);
       self.updateStatusBar();
+      self.updateControls();
       self._toggleDisabled(false);
     });
 
@@ -759,11 +855,32 @@
 
     this._toggleDisabled(true);
     this.sampler.load(data, function() {
-      self.doDraw();
-      self.updateTitle(filename);
-      self.updateStatusBar();
-      self._toggleDisabled(false);
+      try {
+        self.doDraw();
+        self.updateTitle(filename);
+        self.updateStatusBar();
+        self.updateControls();
+        self._toggleDisabled(false);
+      } catch ( e ) {
+        alert('Failed to open beat. Are you trying to load from a version that is outdated?');
+        self.doNew();
+        console.warn(e, e.stack);
+      }
     });
+  };
+
+  ApplicationDrumSamplerWindow.prototype.updateControls = function() {
+    if ( !this.sampler ) { return; }
+    var beat = this.sampler.beat;
+
+    this.sliders.swing.setValue(beat.swingFactor * 100);
+    this.sliders.effect.setValue(beat.effectMix * 100);
+    this.sliders.kickPitch.setValue(beat.instruments.kick.pitch * 100);
+    this.sliders.snarePitch.setValue(beat.instruments.snare.pitch * 100);
+    this.sliders.hihatPitch.setValue(beat.instruments.hihat.pitch * 100);
+    this.sliders.tom1Pitch.setValue(beat.instruments.tom1.pitch * 100);
+    this.sliders.tom2Pitch.setValue(beat.instruments.tom2.pitch * 100);
+    this.sliders.tom3Pitch.setValue(beat.instruments.tom3.pitch * 100);
   };
 
   ApplicationDrumSamplerWindow.prototype.updateStatusBar = function() {
@@ -786,7 +903,7 @@
 
   ApplicationDrumSamplerWindow.prototype.handleHighlight = function(idx) {
     var i, j;
-    for ( i = 0; i < INSTRUMENTS; i++ ) {
+    for ( i = 0; i < INSTRUMENT_COUNT; i++ ) {
       for ( j = 0; j < TRACKS; j++ ) {
         if ( j === idx ) {
           Utils.$addClass(this.$table.childNodes[i].childNodes[j+1], 'Highlight');

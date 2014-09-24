@@ -32,8 +32,9 @@
 }
 
 .Window_ApplicationDrumSamplerWindow .WindowWrapper .Table {
-  margin-top : 25px;
-  margin-bottom : 10px;
+  background : #dadada;
+  padding-top : 25px;
+  padding-bottom : 25px;
 }
 .Window_ApplicationDrumSamplerWindow .WindowWrapper .Table * {
   user-select : none;
@@ -49,7 +50,7 @@
 }
 
 .Window_ApplicationDrumSamplerWindow .WindowWrapper .Table > .Row > .Col.Label {
-  width : 100px;
+  width : 60px;
 }
 
 .Window_ApplicationDrumSamplerWindow .WindowWrapper .Table > .Row > .Col.Highlight {
@@ -57,6 +58,25 @@
 }
 .Window_ApplicationDrumSamplerWindow .WindowWrapper .Table > .Row > .Col.Highlight .GUIToggleButton {
   -webkit-transform: scale(1.2);
+}
+
+.Window_ApplicationDrumSamplerWindow .WindowWrapper .Sliders {
+  text-align : center;
+  background : #8d8d8d;
+  padding-top : 25px;
+  padding-bottom : 25px;
+}
+.Window_ApplicationDrumSamplerWindow .WindowWrapper .Sliders > .Container {
+  width : 55px;
+  display : inline-block;
+}
+.Window_ApplicationDrumSamplerWindow .WindowWrapper .Sliders > .Container > .Label {
+  padding-bottom : 25px;
+  font-weight : bold;
+  color : #000;
+}
+.Window_ApplicationDrumSamplerWindow .WindowWrapper .Sliders > .Container > .GUISlider {
+  display : inline-block;
 }
 
 .GUIToggleButton {

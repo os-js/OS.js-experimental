@@ -698,7 +698,7 @@
       tom2Pitch: null,
       tom3Pitch: null
     };
-    this.title         = metadata.name + ' v0.2';
+    this.title         = metadata.name + ' v0.5';
     this.sampler       = new Sampler({
       onNote: function(idx, time) {
         self.handleHighlight(idx, time);

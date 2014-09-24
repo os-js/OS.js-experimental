@@ -51,7 +51,7 @@
   /**
    * Main Window Constructor
    */
-  var ApplicationDrumSamplerWindow = function(app, metadata) {
+  var ApplicationDrumSamplerWindow = function(app, metadata, openFile) {
     var self = this;
 
     Window.apply(this, ['ApplicationDrumSamplerWindow', {width: 550, height: 490}, app]);
@@ -61,6 +61,7 @@
     this.statusBar     = null;
     this.buttons       = [];
     this.title         = metadata.name + VERSION;
+    this.openFile      = openFile;
     this.sliders       = {
       swing: null,
       effect: null,
@@ -267,6 +268,12 @@
 
       self.updateStatusBar();
       self.updateControls();
+
+      if ( self.openFile && self.openFile.filename ) {
+        if ( self._appRef ) {
+          self._appRef.action('open', self.openFile.filename, self.openFile.mime);
+        }
+      }
     });
   };
 
@@ -512,9 +519,16 @@
   };
 
   ApplicationDrumSampler.prototype.init = function(settings, metadata) {
-    Application.prototype.init.apply(this, arguments);
+    OSjs.Core.Application.prototype.init.apply(this, arguments);
 
-    this.mainWindow = this._addWindow(new ApplicationDrumSamplerWindow(this, metadata));
+    // Get launch/restore argument(s)
+    this.currentFilename = this._getArgument('file');
+    this.currentMime     = this._getArgument('mime');
+
+    this.mainWindow = this._addWindow(new ApplicationDrumSamplerWindow(this, metadata, {
+      filename: this.currentFilename,
+      mime: this.currentMime
+    }));
   };
 
   ApplicationDrumSampler.prototype._onMessage = function(obj, msg, args) {

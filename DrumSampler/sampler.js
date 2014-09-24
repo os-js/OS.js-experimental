@@ -523,6 +523,7 @@
       */
 
       this.stop();
+      this.kit = null;
       if ( this.beat ) {
         this.beat.kit = name;
       }

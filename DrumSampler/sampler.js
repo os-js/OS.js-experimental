@@ -202,19 +202,21 @@
   function loadSamples(list, context, _loaded, _finished) {
 
     function preload(name, url, callback) {
-      Utils.AjaxDownload(url, function(data) {
-        context.decodeAudioData(data,
-          function(buffer) {
-            _loaded(false, name, buffer);
-            callback();
-          },
-          function(buffer) {
-            _loaded('Error decoding sample!');
-            callback();
-          }
-        );
-      }, function(err) {
-        _loaded(err);
+      OSjs.API.downloadFile(url, function(err, data) {
+        if ( err ) {
+          _loaded(err);
+        } else {
+          context.decodeAudioData(data,
+            function(buffer) {
+              _loaded(false, name, buffer);
+              callback();
+            },
+            function(buffer) {
+              _loaded('Error decoding sample!');
+              callback();
+            }
+          );
+        }
       });
     }
 

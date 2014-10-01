@@ -34,7 +34,7 @@
  * Copyright 2011, Google Inc.
  */
 
-(function(Utils) {
+(function(Utils, VFS) {
   'use strict';
 
   if ( window.hasOwnProperty('AudioContext') && !window.hasOwnProperty('webkitAudioContext') ) {
@@ -202,7 +202,7 @@
   function loadSamples(list, context, _loaded, _finished) {
 
     function preload(name, url, callback) {
-      OSjs.API.downloadFile(url, function(err, data) {
+      VFS.download({path: url}, function(err, data) {
         if ( err ) {
           _loaded(err);
         } else {
@@ -652,4 +652,4 @@
     NULL_BEAT: NULL_BEAT
   };
 
-})(OSjs.Utils);
+})(OSjs.Utils, OSjs.VFS);

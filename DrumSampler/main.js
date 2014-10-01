@@ -269,9 +269,9 @@
       self.updateStatusBar();
       self.updateControls();
 
-      if ( self.openFile && self.openFile.filename ) {
+      if ( self.openFile && self.openFile.path ) {
         if ( self._appRef ) {
-          self._appRef.action('open', self.openFile.filename, self.openFile.mime);
+          self._appRef.action('open', self.openFile.path, self.openFile.mime);
         }
       }
     });
@@ -522,13 +522,8 @@
     OSjs.Core.Application.prototype.init.apply(this, arguments);
 
     // Get launch/restore argument(s)
-    this.currentFilename = this._getArgument('file');
-    this.currentMime     = this._getArgument('mime');
-
-    this.mainWindow = this._addWindow(new ApplicationDrumSamplerWindow(this, metadata, {
-      filename: this.currentFilename,
-      mime: this.currentMime
-    }));
+    var file = this._getArgument('file');
+    this.mainWindow = this._addWindow(new ApplicationDrumSamplerWindow(this, metadata, file));
   };
 
   ApplicationDrumSampler.prototype._onMessage = function(obj, msg, args) {
@@ -547,16 +542,16 @@
     }
   };
 
-  ApplicationDrumSampler.prototype.onOpen = function(filename, mime, data) {
+  ApplicationDrumSampler.prototype.onOpen = function(file, data) {
     if ( this.mainWindow ) {
-      this.mainWindow.doOpen(filename, data);
+      this.mainWindow.doOpen(file.path, data);
       this.mainWindow._focus();
     }
   };
 
-  ApplicationDrumSampler.prototype.onSave = function(filename, mime, data) {
+  ApplicationDrumSampler.prototype.onSave = function(file, data) {
     if ( this.mainWindow ) {
-      this.mainWindow.doSave(filename, data);
+      this.mainWindow.doSave(file.path, data);
       this.mainWindow._focus();
     }
   };

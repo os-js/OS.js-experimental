@@ -1,5 +1,6 @@
 {
   "type": "extension",
+  "enabled": false,
   "sources": [
     {"type": "javascript", "src": "vendor/dropbox.js"},
     {"type": "javascript", "src": "vfs.js"}

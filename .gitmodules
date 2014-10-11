@@ -1,0 +1,3 @@
+[submodule "DropboxVFS/vendor/dropbox-js"]
+	path = DropboxVFS/vendor/dropbox-js
+	url = https://github.com/dropbox/dropbox-js.git

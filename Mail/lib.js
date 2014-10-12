@@ -158,163 +158,50 @@
   // Gmail
   /////////////////////////////////////////////////////////////////////////////
 
-  function GmailMailer(clientId) {
-    if ( !clientId ) {
-      onerror('GmailMailer Module not configured or disabled');
-      return;
-    }
-
-    this.clientId   = clientId;
+  function GmailMailer() {
     this.userName   = '';
     this.userEmail  = '';
-    this.userId     = null;
-    this.preloads   = [
-      {
-        type: 'javascript',
-        src: 'https://apis.google.com/js/api.js'
-      }
-    ];
   }
 
-  GmailMailer.prototype.destroy = function() {
-    try {
-      gapi.auth.signOut();
-    } catch ( e ) {
-    }
-  };
+  GmailMailer.prototype.destroy = function() {};
 
   GmailMailer.prototype.init = function(callback) {
     callback = callback || function() {};
     var self = this;
+    var scopes = [
+      'https://www.googleapis.com/auth/gmail.modify',
+      'https://www.googleapis.com/auth/gmail.readonly',
+      'https://www.googleapis.com/auth/gmail.compose',
+      'https://www.googleapis.com/auth/plus.profile.emails.read',
+      'https://mail.google.com',
+      'openid'
+    ];
 
-    function preloaded(error) {
-      if ( !error ) {
-        self.doInit(function(success) {
-          console.debug('GmailMailer::init() => doInit()', success);
-          if ( success ) {
-            self.doAuthentication(function(success) {
-              console.debug('GmailMailer::init() => doAuthentication()', success);
-              if ( success ) {
-                self.doAPILoad(function(success) {
-                  console.debug('GmailMailer::init() => doAPILoad()', success);
-                  if ( success ) {
-                    callback(false, true);
-                  }
-                });
-              }
-            });
-          } else {
-            callback('Google Drive API failed to load');
+    OSjs.Handlers.getGoogleAPI([], scopes, function(error, result) {
+      if ( error ) {
+        return callback(error);
+      }
+      gapi.client.load('plus', 'v1', function() {
+        gapi.client.plus.people.get({
+          userId: 'me'
+        }).execute(function(resp) {
+          if ( resp ) {
+            if ( resp.emails ) {
+              resp.emails.forEach(function(i) {
+                if ( i.type === 'account' ) {
+                  self.userEmail = i.value;
+                  return false;
+                }
+                return true;
+              });
+            }
+            self.userId = resp.id;
+            self.userName = resp.displayName;
           }
-        });
-        return;
-      }
 
-      callback(error);
-    }
-
-    Utils.Preload(this.preloads, function(total, errors) {
-      if ( errors ) {
-        preloaded(error);
-        return;
-      }
-
-      preloaded(false);
-    });
-  };
-
-  GmailMailer.prototype.doInit = function(callback) {
-    console.info('GmailMailer::doInit()');
-
-    callback = callback || function() {};
-
-    if ( !window.gapi || !gapi.load ) {
-      callback(false);
-      return;
-    }
-
-    gapi.load('auth:client', function() {
-      callback(true);
-    });
-  };
-
-  GmailMailer.prototype.doAuthentication = function(callback) {
-    console.info('GmailMailer::doAuthentication()');
-
-    callback = callback || function() {};
-
-    var self = this;
-
-    function getUserId(cb) {
-      cb = cb || function() {};
-      gapi.client.load('oauth2', 'v2', function() {
-        gapi.client.oauth2.userinfo.get().execute(function(resp) {
-          console.info('GmailMailer::doAuthentication() => getUserId()', resp);
-          cb(resp);
-        });
-      });
-    }
-
-    function login(immediate, cb) {
-      console.info('GmailMailer::doAuthentication() => login()', immediate);
-
-      cb = cb || function() {};
-      gapi.auth.authorize({
-        client_id: self.clientId,
-        scope: [
-          'https://www.googleapis.com/auth/gmail.modify',
-          'https://www.googleapis.com/auth/gmail.readonly',
-          'https://www.googleapis.com/auth/gmail.compose',
-          'https://www.googleapis.com/auth/plus.profile.emails.read',
-          'https://mail.google.com',
-          'openid'
-        ],
-        user_id: self.userId,
-        immediate: immediate
-      }, cb);
-    }
-
-    var handleAuthResult = function(authResult) {
-      console.info('GmailMailer::doAuthentication() => handleAuthResult()', authResult);
-
-      if ( authResult && !authResult.error ) {
-        getUserId(function(resp) {
-          if ( resp && resp.id ) {
+          gapi.client.load('gmail', 'v1', function(resp) {
             callback(true);
-          } else {
-            callback(false);
-          }
-        });
-      } else {
-        login(false, handleAuthResult);
-      }
-    };
-
-    login(true, handleAuthResult);
-  };
-
-  GmailMailer.prototype.doAPILoad = function(callback) {
-    callback = callback || function() {};
-    gapi.client.load('plus', 'v1', function() {
-      gapi.client.plus.people.get({
-        userId: 'me'
-      }).execute(function(resp) {
-        if ( resp ) {
-          if ( resp.emails ) {
-            resp.emails.forEach(function(i) {
-              if ( i.type === 'account' ) {
-                self.userEmail = i.value;
-                return false;
-              }
-              return true;
-            });
-          }
-          self.userId = resp.id;
-          self.userName = resp.displayName;
-        }
-
-        gapi.client.load('gmail', 'v1', function(resp) {
-          callback(true);
+          });
         });
       });
     });
@@ -463,8 +350,8 @@
   // Mailer
   /////////////////////////////////////////////////////////////////////////////
 
-  function Mailer(clientId) {
-    this.module = new GmailMailer(clientId);
+  function Mailer() {
+    this.module = new GmailMailer();
   }
 
   Mailer.prototype.init = function(callback) {

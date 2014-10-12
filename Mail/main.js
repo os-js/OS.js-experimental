@@ -364,7 +364,7 @@
 
     // You can set application variables here
     this.mainWindow = null;
-    this.mailer = new OSjs.Applications.ApplicationMail.Mailer(metadata.config.clientId);
+    this.mailer = new OSjs.Applications.ApplicationMail.Mailer();
   };
 
   ApplicationMail.prototype = Object.create(Application.prototype);

@@ -44,12 +44,30 @@
   /////////////////////////////////////////////////////////////////////////////
 
   function DropboxVFS() {
-    this.client = new Dropbox.Client({ key: "k9pea9k3i1hmcz0" });
+    var metadata = API.getHandlerInstance().getApplicationMetadata("ExtensionDropboxVFS");
+    var preloads = [];
+    var clientKey = metadata.config.ClientKey;
+
+    metadata.sources.forEach(function(iter) {
+      if ( iter.preload ) {
+        preloads.push(iter);
+      }
+    });
+
+    this.preloads = preloads;
+    this.client = new Dropbox.Client({ key: clientKey });
   }
   DropboxVFS.prototype.init = function(callback) {
-    this.client.authenticate(function(error, client) {
-      console.warn("DropboxVFS::construct()", error, client);
-      callback(error);
+    var self = this;
+
+    Utils.Preload(this.preloads, function(total, errors) {
+      if ( errors ) {
+        return callback(errors.join(", "));
+      }
+      self.client.authenticate(function(error, client) {
+        console.warn("DropboxVFS::construct()", error, client);
+        callback(error);
+      });
     });
   };
   DropboxVFS.prototype.scandir = function(item, callback) {

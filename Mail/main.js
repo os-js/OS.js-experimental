@@ -365,6 +365,13 @@
     // You can set application variables here
     this.mainWindow = null;
     this.mailer = new OSjs.Applications.ApplicationMail.Mailer();
+    this.database = null;
+    this.dbOptions = {
+      dbName: 'ApplicationMailer',
+      storeName: 'Messages',
+      version: '8',
+      primaryKey: 'id'
+    };
   };
 
   ApplicationMail.prototype = Object.create(Application.prototype);
@@ -398,13 +405,20 @@
   ApplicationMail.prototype.initMailer = function(win) {
     var self = this;
     this.mainWindow = win; // FIXME: WTF ?! Why is this null after init() ?!?!?!
-    if ( this.mailer ) {
-      this.mainWindow._toggleLoading(true);
-      this.mailer.init(function(error, success) {
-        self.mainWindow._toggleLoading(false);
-        self.fetch();
-      });
-    }
+    this.database = OSjs.Drivers.createInstance('IndexedDB', this.dbOptions, function(error, result) {
+      if ( error ) {
+        console.error("XXXXXXXX", "initMailer()", error); // FIXME
+        return;
+      }
+
+      if ( self.mailer ) {
+        self.mainWindow._toggleLoading(true);
+        self.mailer.init(function(error, success) {
+          self.mainWindow._toggleLoading(false);
+          self.fetch();
+        });
+      }
+    });
   };
 
   ApplicationMail.prototype.fetch = function() {
@@ -433,7 +447,12 @@
       var first = null;
 
       self.mainWindow.onFetchMailboxStart();
-      self.getMailboxCache(function(cache) {
+      self.getMailboxCache(function(error, cache) {
+        if ( error ) {
+          console.error("XXXXXXXX", "queueMailbox()", error); // FIXME
+          return;
+        }
+
         self.mainWindow.renderMailbox(cache, true);
         var first = cache.length ? cache[0].id : null;
         mailer.getMailboxList({folder: 'INBOX', last: first}, function(error, mailbox, finished) {
@@ -473,9 +492,8 @@
     list.forEach(function(iter) {
       cache.push(iter.toObject());
     });
-    this._setSetting('mailboxCache', cache, true, function() {
-      callback();
-    });
+
+    this.database.insert(cache, callback);
   };
 
   ApplicationMail.prototype.getMessage = function(id, callback) {
@@ -487,11 +505,16 @@
   ApplicationMail.prototype.getMailboxCache = function(callback) {
     callback = callback || function() {};
     var cache = [];
-    var list = this._getSetting('mailboxCache') || [];
-    list.forEach(function(i) {
-      cache.push(OSjs.Applications.ApplicationMail.Message.createFromObject(i));
+
+    this.database.list({}, function(error, result) {
+      if ( error ) {
+        return callback(error);
+      }
+      result.forEach(function(i) {
+        cache.push(OSjs.Applications.ApplicationMail.Message.createFromObject(i));
+      });
+      callback(false, cache || []);
     });
-    callback(cache);
   };
 
   ApplicationMail.prototype.sendMessage = function(msg, win) {

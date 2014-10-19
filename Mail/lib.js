@@ -168,16 +168,16 @@
   GmailMailer.prototype.init = function(callback) {
     callback = callback || function() {};
     var self = this;
-    var scopes = [
+
+    var iargs = {load: [], scope: [
       'https://www.googleapis.com/auth/gmail.modify',
       'https://www.googleapis.com/auth/gmail.readonly',
       'https://www.googleapis.com/auth/gmail.compose',
       'https://www.googleapis.com/auth/plus.profile.emails.read',
       'https://mail.google.com',
       'openid'
-    ];
-
-    OSjs.Handlers.getGoogleAPI([], scopes, function(error, result) {
+    ]};
+    OSjs.Drivers.createInstance('GoogleAPI', iargs, function(error, result) {
       if ( error ) {
         return callback(error);
       }
@@ -273,7 +273,7 @@
           console.info('GmailMailer::getMailboxList()', '=>', resp);
 
           result = result.concat(resp.messages);
-          var nextPageToken = resp.nextPageToken;
+          var nextPageToken = null;//resp.nextPageToken;
           if (nextPageToken) {
             request = gapi.client.gmail.users.messages.list({
               userId: 'me',

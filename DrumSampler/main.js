@@ -125,21 +125,21 @@
       });
     }
 
-    menuBar.addItem(OSjs._('File'), [
-      {title: OSjs._('New'), name: 'New', onClick: function() {
+    menuBar.addItem(OSjs.API._('File'), [
+      {title: OSjs.API._('New'), name: 'New', onClick: function() {
         app.action('new');
       }},
-      {title: OSjs._('Load demo track'), name: 'LoadDemo', menu: demoMenu},
-      {title: OSjs._('Open'), name: 'Open', onClick: function() {
+      {title: OSjs.API._('Load demo track'), name: 'LoadDemo', menu: demoMenu},
+      {title: OSjs.API._('Open'), name: 'Open', onClick: function() {
         app.action('open');
       }},
-      {title: OSjs._('Save'), name: 'Save', onClick: function() {
+      {title: OSjs.API._('Save'), name: 'Save', onClick: function() {
         app.action('save');
       }},
-      {title: OSjs._('Save As...'), name: 'SaveAs', onClick: function() {
+      {title: OSjs.API._('Save As...'), name: 'SaveAs', onClick: function() {
         app.action('saveas');
       }},
-      {title: OSjs._('Close'), name: 'Close', onClick: function() {
+      {title: OSjs.API._('Close'), name: 'Close', onClick: function() {
         app.action('close');
       }}
     ]);
@@ -174,12 +174,12 @@
       }
     }
 
-    menuBar.addItem(OSjs._('Select Kit'), kitMenu);
-    menuBar.addItem(OSjs._('Select Effect'), effectMenu);
+    menuBar.addItem(OSjs.API._('Select Kit'), kitMenu);
+    menuBar.addItem(OSjs.API._('Select Effect'), effectMenu);
 
-    menuBar.addItem(OSjs._('Play/Pause'));
-    menuBar.addItem(OSjs._('Tempo -'));
-    menuBar.addItem(OSjs._('Tempo +'));
+    menuBar.addItem(OSjs.API._('Play/Pause'));
+    menuBar.addItem(OSjs.API._('Tempo -'));
+    menuBar.addItem(OSjs.API._('Tempo +'));
 
     function createOnClick(idx, instrument, col) {
       return function(ev, state) {

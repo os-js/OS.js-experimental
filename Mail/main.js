@@ -105,8 +105,8 @@
       };
     }
 
-    menuBar.addItem(OSjs._('File'), [
-      {title: OSjs._('Close'), onClick: function() {
+    menuBar.addItem(OSjs.API._('File'), [
+      {title: OSjs.API._('Close'), onClick: function() {
         self._close();
       }}
     ]);
@@ -116,14 +116,14 @@
       textSubject = this._addGUIElement(new GUI.Text('TextSubject', {placeholder: 'Subject'}), root);
 
       Utils.$addClass(this._$root, 'ComposeWindow');
-      menuBar.addItem(OSjs._('Send'));
-      menuBar.addItem(OSjs._('Save draft'));
+      menuBar.addItem(OSjs.API._('Send'));
+      menuBar.addItem(OSjs.API._('Save draft'));
     }
 
     menuBar.onMenuOpen = function(menu, mpos, mtitle, menuBar) {
-      if ( mtitle === OSjs._('Send') ) {
+      if ( mtitle === OSjs.API._('Send') ) {
         self._parent._appRef.sendMessage(getMessageData(), self);
-      } else if ( mtitle === OSjs._('Save draft') ) {
+      } else if ( mtitle === OSjs.API._('Save draft') ) {
         self._parent._appRef.draftMessage(getMessageData(), self);
       }
     };
@@ -194,19 +194,19 @@
     var viewRight  = panedView.createView('File');
     this.statusBar = this._addGUIElement(new GUI.StatusBar('StatusBar'), root);
 
-    menuBar.addItem(OSjs._('File'), [
-      {title: OSjs._('Close'), onClick: function() {
+    menuBar.addItem(OSjs.API._('File'), [
+      {title: OSjs.API._('Close'), onClick: function() {
         self._close();
       }}
     ]);
 
-    menuBar.addItem(OSjs._('Compose message'));
-    menuBar.addItem(OSjs._('Fetch messages'));
+    menuBar.addItem(OSjs.API._('Compose message'));
+    menuBar.addItem(OSjs.API._('Fetch messages'));
 
     menuBar.onMenuOpen = function(menu, mpos, mtitle, menuBar) {
-      if ( mtitle === OSjs._('Fetch messages') ) {
+      if ( mtitle === OSjs.API._('Fetch messages') ) {
         self._appRef.fetch();
-      } else if ( mtitle === OSjs._('Compose message') ) {
+      } else if ( mtitle === OSjs.API._('Compose message') ) {
         self.createMessageWindow('write');
       }
     };

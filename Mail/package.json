@@ -1,15 +1,14 @@
 {
-  "ApplicationMail":  {
-    "name":       "Mail",
-    "mime":       null,
-    "category":   "office",
-    "icon":       "emblems/emblem-mail.png",
-    "preload":    [
-      {"src": "lib.js", "type": "javascript"},
-      {"src": "main.js", "type": "javascript"},
-      {"src": "main.css", "type": "stylesheet"}
-    ]
-  }
+  "className":  "ApplicationMail",
+  "name":       "Mail",
+  "mime":       null,
+  "category":   "office",
+  "icon":       "emblems/emblem-mail.png",
+  "preload":    [
+    {"src": "lib2.js", "type": "javascript"},
+    {"src": "main.js", "type": "javascript"},
+    {"src": "main.css", "type": "stylesheet"}
+  ]
 }
 
 

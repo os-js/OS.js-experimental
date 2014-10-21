@@ -43,7 +43,7 @@
     });
   }
 
-  function getMessageData(list, callback) {
+  function getMessageData(list, callback, cbProgress) {
     var index  = 0;
 
     function _next() {
@@ -53,6 +53,7 @@
       }
 
       var iter = list[index];
+      cbProgress(index, list.length-1, iter);
       getMessage(iter.id, function(result) {
         if ( result ) {
           iter.setPayload(result.payload);
@@ -91,7 +92,6 @@
     this.mimeType = 'text/plain';
     this.headers = [];
     this.folders = [];
-    this.loaded = false;
   }
 
   Message.prototype.setHeaders = function(arr) {
@@ -147,27 +147,56 @@
 
   Message.createFromObject = function(o) {
     var msg = new Message();
-    msg.loaded = true;
     Object.keys(o).forEach(function(i) {
       msg[i] = o[i];
     });
     return msg;
   };
 
+
   /////////////////////////////////////////////////////////////////////////////
-  // Gmail
+  // Mailer
   /////////////////////////////////////////////////////////////////////////////
 
-  function GmailMailer() {
+  function Mailer() {
+    this.database   = null;
     this.userName   = '';
     this.userEmail  = '';
+    this.database   = null;
+    this.dbOptions  = {
+      dbName: 'ApplicationMailerDB',
+      version: '3',
+      onupgrade: function(db, cb) {
+        if ( db.objectStoreNames.contains('Messages') ) {
+          db.deleteObjectStore('Messages');
+        }
+        db.createObjectStore('Messages', {keyPath: 'id'});
+
+        if ( db.objectStoreNames.contains('Settings') ) {
+          db.deleteObjectStore('Settings');
+        }
+        db.createObjectStore('Settings', {keyPath: 'name'});
+
+        cb();
+      }
+    };
   }
 
-  GmailMailer.prototype.destroy = function() {};
-
-  GmailMailer.prototype.init = function(callback) {
+  Mailer.prototype.init = function(callback) {
     callback = callback || function() {};
     var self = this;
+
+    function initDatabase() {
+      self.database = OSjs.Drivers.createInstance('IndexedDB', self.dbOptions, function(error, result) {
+        if ( error ) {
+          console.error('Mailer::init() error', error); // FIXME
+          callback(false);
+          return;
+        }
+
+        callback(true);
+      });
+    }
 
     var iargs = {load: [], scope: [
       'https://www.googleapis.com/auth/gmail.modify',
@@ -200,14 +229,17 @@
           }
 
           gapi.client.load('gmail', 'v1', function(resp) {
-            callback(true);
+            initDatabase();
           });
         });
       });
     });
   };
 
-  GmailMailer.prototype.sendMessage = function(opts, callback) {
+  Mailer.prototype.destroy = function() {
+  };
+
+  Mailer.prototype.sendMessage = function(message, callback) {
     var lines = [];
     lines.push('From: "' + this.userName + '" <' + this.userEmail + '>');
     lines.push('To: ' + opts.to);
@@ -226,7 +258,7 @@
     });
 
     request.execute(function(resp) {
-      console.info('GmailMailer::sendMessage()', '=>', resp);
+      console.info('Mailer::sendMessage()', '=>', resp);
       if ( resp && resp.id ) {
         callback(false, resp);
       } else {
@@ -235,14 +267,14 @@
     });
   };
 
-  GmailMailer.prototype.getFolderList = function(opts, callback) {
+  Mailer.prototype.getFolderList = function(opts, callback) {
     function getFolders(cb) {
       var request = gapi.client.gmail.users.labels.list({
         userId: 'me'
       });
 
       request.execute(function(resp) {
-        console.info('GmailMailer::getFolderList()', '=>', resp);
+        console.info('Mailer::getFolderList()', '=>', resp);
         if ( typeof resp.labels === 'object' && (resp.labels instanceof Array) ) {
           cb(resp.labels);
           return;
@@ -264,16 +296,52 @@
     });
   };
 
-  GmailMailer.prototype.getMailboxList = function(opts, callback) {
+  Mailer.prototype.draftMessage = function(message, callback) {
+    callback('Not implemented');
+  };
+
+  Mailer.prototype.updateMessages = function(opts, callback) {
+    opts = opts || {};
+    opts.onprogress = opts.onprogress || function() {};
+    opts.onmetadataloaded = opts.onmetadataloaded || function() {};
+
+    var self = this;
     var folder = opts.folder || null;
+    var last;
+
+    function findLastMessage(cb) {
+      self.getMessages({folder: folder}, function(error, result) {
+        if ( !error && result.length && !last ) {
+          last = result[0].id;
+        }
+        cb();
+      });
+    }
 
     function retrieveAllMessages(cb) {
       var retrievePageOfMessages = function(request, result) {
         request.execute(function(resp) {
-          console.info('GmailMailer::getMailboxList()', '=>', resp);
+          console.info('Mailer::getMessages()', '=>', resp);
+
+          if ( resp && resp.messages && last ) {
+            var finished = false;
+            resp.messages.forEach(function(iter) {
+              if ( iter.id === last ) {
+                return false;
+              }
+            });
+
+            /*
+            // TODO
+            if ( finished ) {
+              console.warn("YOU HAVE ALREADY FETCHED YOUR MAILBOX");
+              return cb([]);
+            }
+            */
+          }
 
           result = result.concat(resp.messages);
-          var nextPageToken = null;//resp.nextPageToken;
+          var nextPageToken = resp.nextPageToken;
           if (nextPageToken) {
             request = gapi.client.gmail.users.messages.list({
               userId: 'me',
@@ -293,42 +361,125 @@
         });
         retrievePageOfMessages(initialRequest, []);
       } catch ( e ) {
-        console.warn('GmailMailer::getMailboxList() exception', e, e.stack);
+        console.warn('Mailer::getMessages() exception', e, e.stack);
         console.warn('THIS ERROR OCCURS WHEN MULTIPLE REQUESTS FIRE AT ONCE ?!'); // FIXME
         cb([]);
       }
     }
 
-    retrieveAllMessages(function(list) {
-      var result = [];
-      var finished = false;
+    function storeItems(list, cb, all) {
+      var index = 0;
+      var save = [];
 
-      list.forEach(function(iter, i) {
-        if ( iter.id === opts.last ) {
-          console.warn("YOU ALREADY HAVE ALL MESSAGES IN CACHE :-)");
-          finished = true;
-          return false;
+      if ( all ) {
+        list.forEach(function(iter) {
+          save.push(iter.toObject());
+        });
+        return self.database.insert({store: 'Messages', key: 'id'}, save, function() {
+          cb();
+        });
+      }
+
+      function _next() {
+        if ( index >= list.length ) {
+          self.database.insert({store: 'Messages', key: 'id'}, save, function() {
+            cb();
+          });
+          return;
         }
 
-        result.push(new Message(iter.id, iter.threadId, 'Loading message \'' + iter.id + '\''));
-        return true;
-      });
+        var idx = list[index].id;
+        self.database.get({store: 'Messages'}, idx, function(error, result) {
+          if ( error || !result ) {
+            save.push(list[index].toObject());
+          }
 
-      if ( finished ) {
-        callback(false, [], finished);
-      } else {
-        callback(false, result, false);
+          index++;
+          _next();
+        });
       }
+
+      _next();
+    }
+
+    function handleMessageList(list) {
+      storeItems(list, function() {
+        self.getMessages({folder: folder}, function(error, result) {
+          if ( !error && result ) {
+            opts.onmetadataloaded(result);
+          }
+
+          getMessageData(list, function() {
+            storeItems(list, function() {
+              callback(list);
+            }, true);
+          }, function(index, total, current) {
+            opts.onprogress(index, total, current);
+          });
+        });
+      });
+    }
+
+    findLastMessage(function() {
+      retrieveAllMessages(function(list) {
+        var result = [];
+        list.forEach(function(iter, i) {
+          result.push(new Message(iter.id, iter.threadId, 'Loading message \'' + iter.id + '\''));
+        });
+
+        handleMessageList(result);
+      });
     });
   };
 
-  GmailMailer.prototype.getMessageData = function(id, callback) {
+  Mailer.prototype.getMessages = function(opts, callback) {
+    this.database.list({store: 'Messages'}, function(error, result) {
+      var messages = [];
+      if ( !error && result ) {
+        result.forEach(function(iter) {
+          messages.push(Message.createFromObject(iter));
+        });
+      }
+      callback(error, messages);
+    });
+  };
+
+  Mailer.prototype.getFolders = function(opts, callback) {
+    function getFolders(cb) {
+      var request = gapi.client.gmail.users.labels.list({
+        userId: 'me'
+      });
+
+      request.execute(function(resp) {
+        console.info('Mailer::getFolderList()', '=>', resp);
+        if ( typeof resp.labels === 'object' && (resp.labels instanceof Array) ) {
+          cb(resp.labels);
+          return;
+        }
+        callback('Failed to get mailbox');
+      });
+    }
+
+    getFolders(function(list) {
+      var result = [];
+      list.forEach(function(iter) {
+        result.push(new Folder(iter.id, iter.name, {
+          messageListVisibility: iter.messageListVisibility || null,
+          labelListVisibility: iter.labelListVisibility || null,
+          type: iter.type || null
+        }));
+      });
+      callback(false, list);
+    });
+  };
+
+  Mailer.prototype.getMessageData = function(id, callback) {
     getMessage(id, function(result) {
       callback(result);
     });
   };
 
-  GmailMailer.prototype.getMessageBody = function(id, callback) {
+  Mailer.prototype.getMessageBody = function(id, callback) {
     getMessage(id, function(result) {
       if ( result ) {
         var message = '';
@@ -344,51 +495,6 @@
         callback('Failed to fetch message: ' + id);
       }
     });
-  };
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Mailer
-  /////////////////////////////////////////////////////////////////////////////
-
-  function Mailer() {
-    this.module = new GmailMailer();
-  }
-
-  Mailer.prototype.init = function(callback) {
-    if ( this.module ) {
-      this.module.init(callback);
-    }
-  };
-
-  Mailer.prototype.destroy = function() {
-    if ( this.module ) {
-      this.module.destroy();
-    }
-    this.module = null;
-  };
-
-  Mailer.prototype.sendMessage = function(message, callback) {
-    this.module.sendMessage(message, callback);
-  };
-
-  Mailer.prototype.draftMessage = function(message, callback) {
-    callback('Not implemented');
-  };
-
-  Mailer.prototype.getMailboxList = function(opts, callback) {
-    this.module.getMailboxList(opts, callback);
-  };
-
-  Mailer.prototype.getFolderList = function(opts, callback) {
-    this.module.getFolderList(opts, callback);
-  };
-
-  Mailer.prototype.getMessageData = function(opts, callback) {
-    this.module.getMessageData(opts, callback);
-  };
-
-  Mailer.prototype.getMessageBody = function(opts, callback) {
-    this.module.getMessageBody(opts, callback);
   };
 
   /////////////////////////////////////////////////////////////////////////////

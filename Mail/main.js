@@ -257,39 +257,8 @@
     win._focus();
   };
 
-  ApplicationMailWindow.prototype.onFetchFoldersStart = function() {
-    this.statusBar.setText('Downloading folders...');
-  };
-
-  ApplicationMailWindow.prototype.onFetchFoldersComplete = function(folders) {
-    this.statusBar.setText('Updated folders...');
-    this.renderFolders(folders);
-  };
-
-  ApplicationMailWindow.prototype.onFetchMailboxStart = function() {
-    this.statusBar.setText('Downloading messages...');
-  };
-
-  ApplicationMailWindow.prototype.onFetchMailboxComplete = function(messages, cached) {
-    this.statusBar.setText('Updated messages...');
-  };
-
-  ApplicationMailWindow.prototype.onFetchDataStart = function(mailbox) {
-    this.statusBar.setText('Fetching message headers...');
-    if ( mailbox.length ) {
-      this.renderMailbox(mailbox);
-    }
-  };
-
-  ApplicationMailWindow.prototype.onFetchDataProgress = function(mail, data, idx, total) {
-    this.statusBar.setText('Got header header ' + (idx+1).toString() + '/' + total.toString());
-  };
-
-  ApplicationMailWindow.prototype.onFetchDataComplete = function(mailbox) {
-    if ( mailbox.length ) {
-      this.renderMailbox(mailbox);
-    }
-    this.statusBar.setText('');
+  ApplicationMailWindow.prototype.setStatusbarText = function(txt) {
+    this.statusBar.setText(txt);
   };
 
   ApplicationMailWindow.prototype.renderFolders = function(list) {
@@ -365,13 +334,6 @@
     // You can set application variables here
     this.mainWindow = null;
     this.mailer = new OSjs.Applications.ApplicationMail.Mailer();
-    this.database = null;
-    this.dbOptions = {
-      dbName: 'ApplicationMailer',
-      storeName: 'Messages',
-      version: '8',
-      primaryKey: 'id'
-    };
   };
 
   ApplicationMail.prototype = Object.create(Application.prototype);
@@ -405,20 +367,16 @@
   ApplicationMail.prototype.initMailer = function(win) {
     var self = this;
     this.mainWindow = win; // FIXME: WTF ?! Why is this null after init() ?!?!?!
-    this.database = OSjs.Drivers.createInstance('IndexedDB', this.dbOptions, function(error, result) {
-      if ( error ) {
-        console.error("XXXXXXXX", "initMailer()", error); // FIXME
-        return;
-      }
+    if ( this.mailer ) {
+      this.mainWindow._toggleLoading(true);
+      this.mailer.init(function(error, success) {
+        self.mainWindow._toggleLoading(false);
 
-      if ( self.mailer ) {
-        self.mainWindow._toggleLoading(true);
-        self.mailer.init(function(error, success) {
-          self.mainWindow._toggleLoading(false);
+        self.initViews(function() {
           self.fetch();
         });
-      }
-    });
+      });
+    }
   };
 
   ApplicationMail.prototype.fetch = function() {
@@ -427,94 +385,77 @@
 
     if ( !mailer ) {return;}
 
-    function fetchMessageData(mailbox) {
-      self.mainWindow.onFetchDataStart(mailbox);
+    this.mainWindow.setStatusbarText('Updating message database...');
+    mailer.updateMessages({
+      onpage: function(result) {
+      },
 
-      queueMessageData(mailer, mailbox, function(mail, data, idx) {
-        self.mainWindow.onFetchDataProgress(mail, data, idx, mailbox.length);
-        if ( data && !mail.loaded ) {
-          mail.setPayload(data.payload);
-          mail.setFolders(data.labelIds);
-          mail.loaded = true;
+      onmetadataloaded: function(result) {
+        if ( result ) {
+          self.mainWindow.renderMailbox(result);
         }
-      }, function() {
-        self.mainWindow.onFetchDataComplete(mailbox);
-        self.setMailboxCache(mailbox);
-      });
-    }
+      },
+      onprogress: function(index, total, current) {
+        if ( self.mainWindow ) {
+          self.mainWindow.setStatusbarText(Utils.format('Loading message {0} of {1} ({2})', index, total, current.id));
+        }
+      }
+    }, function(result) {
+      self.mainWindow.setStatusbarText('Updated message database');
+      if ( result ) {
+        self.mainWindow.renderMailbox(result);
+      }
+    });
+  };
+
+  ApplicationMail.prototype.initViews = function(callback) {
+    callback = callback || function() {};
+
+    var mailer = this.mailer;
+    var self = this;
+
+    if ( !mailer ) {return;}
 
     function queueMailbox() {
       var first = null;
 
-      self.mainWindow.onFetchMailboxStart();
-      self.getMailboxCache(function(error, cache) {
+      self.mainWindow.setStatusbarText('Loading messages...');
+      mailer.getMessages({folder: 'INBOX'}, function(error, result) {
+        callback();
+
         if ( error ) {
-          console.error("XXXXXXXX", "queueMailbox()", error); // FIXME
+          console.error('ApplicationMail::fetch()', 'getMessages()', error);
           return;
         }
 
-        self.mainWindow.renderMailbox(cache, true);
-        var first = cache.length ? cache[0].id : null;
-        mailer.getMailboxList({folder: 'INBOX', last: first}, function(error, mailbox, finished) {
-          self.mainWindow.onFetchMailboxComplete(error, mailbox);
-          if ( error ) {
-            console.error('_inited() => getMailboxList()', error); // FIXME
-            return;
-          }
-          if ( finished ) {
-            self.mainWindow.onFetchDataComplete(cache);
-          } else {
-            fetchMessageData(mailbox);
-          }
-        });
+        self.mainWindow.setStatusbarText('');
+        if ( result ) {
+          self.mainWindow.renderMailbox(result);
+        }
       });
     }
 
     function queueFolders() {
-      self.mainWindow.onFetchFoldersStart();
-      mailer.getFolderList({}, function(error, folders) {
+      self.mainWindow.setStatusbarText('Loading folders...');
+      mailer.getFolders({}, function(error, folders) {
         queueMailbox();
 
         if ( error ) {
           alert(error); // FIXME
           return;
         }
-        self.mainWindow.onFetchFoldersComplete(folders);
+        self.mainWindow.setStatusbarText('Loaded folders...');
+        self.mainWindow.renderFolders(folders);
       });
     }
 
     queueFolders();
   };
 
-  ApplicationMail.prototype.setMailboxCache = function(list, callback) {
-    callback = callback || function() {};
-    var cache = [];
-    list.forEach(function(iter) {
-      cache.push(iter.toObject());
-    });
-
-    this.database.insert(cache, callback);
-  };
-
   ApplicationMail.prototype.getMessage = function(id, callback) {
     if ( this.mailer ) {
       this.mailer.getMessageBody(id, callback);
     }
-  };
-
-  ApplicationMail.prototype.getMailboxCache = function(callback) {
-    callback = callback || function() {};
-    var cache = [];
-
-    this.database.list({}, function(error, result) {
-      if ( error ) {
-        return callback(error);
-      }
-      result.forEach(function(i) {
-        cache.push(OSjs.Applications.ApplicationMail.Message.createFromObject(i));
-      });
-      callback(false, cache || []);
-    });
   };
 
   ApplicationMail.prototype.sendMessage = function(msg, win) {

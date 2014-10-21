@@ -271,7 +271,7 @@
 
       if ( self.openFile && self.openFile.path ) {
         if ( self._appRef ) {
-          self._appRef.action('open', self.openFile.path, self.openFile.mime);
+          self._appRef.action('open', self.openFile);
         }
       }
     });

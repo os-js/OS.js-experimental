@@ -1,13 +1,12 @@
 {
-  "ExtensionDropboxVFS": {
-    "type": "extension",
-    "enabled": false,
-    "config": {
-      "ClientKey": "k9pea9k3i1hmcz0"
-    },
-    "sources": [
-      {"type": "javascript", "src": "vendor/dropbox.js", "preload": true},
-      {"type": "javascript", "src": "vfs.js"}
-    ]
-  }
+  "className": "ExtensionDropboxVFS",
+  "type": "extension",
+  "enabled": false,
+  "config": {
+    "ClientKey": "k9pea9k3i1hmcz0"
+  },
+  "sources": [
+    {"type": "javascript", "src": "vendor/dropbox.js", "preload": true},
+    {"type": "javascript", "src": "vfs.js"}
+  ]
 }

@@ -1,17 +1,16 @@
 {
-  "ApplicationDrumSampler":  {
-    "name":       "DrumSampler",
-    "mime":       ["osjs\\/dbeat"],
-    "icon":       "devices/speaker.png",
-    "category":   "multimedia",
-    "preload":    [
-      {"src": "gui.js", "type": "javascript"},
-      {"src": "sampler.js", "type": "javascript"},
-      {"src": "demos.js", "type": "javascript"},
-      {"src": "main.js", "type": "javascript"},
-      {"src": "main.css", "type": "stylesheet"}
-    ]
-  }
+  "className":  "ApplicationDrumSampler",
+  "name":       "DrumSampler",
+  "mime":       ["osjs\\/dbeat"],
+  "icon":       "devices/speaker.png",
+  "category":   "multimedia",
+  "preload":    [
+    {"src": "gui.js", "type": "javascript"},
+    {"src": "sampler.js", "type": "javascript"},
+    {"src": "demos.js", "type": "javascript"},
+    {"src": "main.js", "type": "javascript"},
+    {"src": "main.css", "type": "stylesheet"}
+  ]
 }
 
 

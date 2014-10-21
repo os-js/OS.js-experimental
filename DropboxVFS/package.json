@@ -5,6 +5,14 @@
   "config": {
     "ClientKey": "k9pea9k3i1hmcz0"
   },
+  "build": {
+    "copy" : [
+      "package.json",
+      "vfs.js",
+      "vendor/dropbox.js",
+      "vendor/dropbox.min.map"
+    ]
+  },
   "sources": [
     {"type": "javascript", "src": "vendor/dropbox.js", "preload": true},
     {"type": "javascript", "src": "vfs.js"}

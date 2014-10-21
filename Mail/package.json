@@ -4,6 +4,7 @@
   "mime":       null,
   "category":   "office",
   "icon":       "emblems/emblem-mail.png",
+  "enabled":    false,
   "preload":    [
     {"src": "lib2.js", "type": "javascript"},
     {"src": "main.js", "type": "javascript"},

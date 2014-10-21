@@ -187,7 +187,7 @@
     var self = this;
 
     function initDatabase() {
-      self.database = OSjs.Drivers.createInstance('IndexedDB', self.dbOptions, function(error, result) {
+      self.database = OSjs.Helpers.IndexedDB.createInstance(self.dbOptions, function(error, result) {
         if ( error ) {
           console.error('Mailer::init() error', error); // FIXME
           callback(false);
@@ -206,7 +206,7 @@
       'https://mail.google.com',
       'openid'
     ]};
-    OSjs.Drivers.createInstance('GoogleAPI', iargs, function(error, result) {
+    OSjs.Helpers.GoogleAPI.createInstance(iargs, function(error, result) {
       if ( error ) {
         return callback(error);
       }

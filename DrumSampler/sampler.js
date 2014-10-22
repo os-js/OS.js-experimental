@@ -202,7 +202,7 @@
   function loadSamples(list, context, _loaded, _finished) {
 
     function preload(name, url, callback) {
-      VFS.download({path: url}, function(err, data) {
+      VFS.download({path: 'osjs://' + url}, function(err, data) {
         if ( err ) {
           _loaded(err);
         } else {

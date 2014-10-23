@@ -19,6 +19,8 @@
   },
   "preload":    [
     {"src": "vendor/three.js/build/three.min.js", "type": "javascript"},
+    {"src": "vendor/three.js/examples/js/renderers/CanvasRenderer.js", "type": "javascript"},
+    {"src": "vendor/three.js/examples/js/renderers/Projector.js", "type": "javascript"},
     {"src": "vendor/three.js/examples/js/libs/tween.min.js", "type": "javascript"},
     {"src": "vendor/three.js/examples/js/libs/stats.min.js", "type": "javascript"},
 

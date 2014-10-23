@@ -64,9 +64,12 @@
     // Set window properties and other stuff here
     this.view       = null;
     this.statusBar  = null;
-    this.title      = metadata.name + ' v0.1';
+    this.title      = metadata.name + ' v0.5';
     this._icon      = metadata.icon;
     this._title     = this.title;
+
+    this.currentDir  = '/';
+    this.currentList = [];
   };
 
   ApplicationArchiverWindow.prototype = Object.create(Window.prototype);
@@ -91,14 +94,14 @@
 
     menuBar.addItem(API._("Add File"));
 
-    menuBar.addItem(API._("Extract"));
+    menuBar.addItem(API._("Extract to"));
 
     menuBar.onMenuOpen = function(menu, pos, title) {
       if ( menu && title === API._('File') ) {
         menu.setItemDisabled("Save", app.currentFile ? false : true);
       }
       if ( app.currentFile ) {
-        if ( title === API._('Extract') ) {
+        if ( title === API._('Extract to') ) {
           self.onExtractClicked();
         }
         if ( title === API._('Add File') ) {
@@ -107,12 +110,23 @@
       }
     };
 
+    function _callbackIcon(iter) {
+      return API.getIcon(iter.icon, null, '16x16');
+    }
+
     this.view = this._addGUIElement(new GUI.ListView('ArchiverListView'), root);
     this.view.setColumns([
-      {key: 'filename', title: OSjs.API._('Filename')},
-      {key: 'path',     title: OSjs.API._('Path')},
-      {key: 'size',     title: OSjs.API._('Size'), domProperties: {width: '150'}}
-     ]);
+      {key: 'icon',     title: '', type: 'image', callback: _callbackIcon, domProperties: {width: '16'}, resizable: false},
+      {key: 'filename', title: API._('Filename')},
+      {key: 'comment',  title: API._('Comment'), domProperties: {width: '200'}},
+      {key: 'path',     title: API._('Path'), visible: false},
+      {key: 'csize',    title: API._('Compressed Size'), domProperties: {width: '120'}},
+      {key: 'rsize',    title: API._('Real Size'), domProperties: {width: '120'}},
+      {key: 'type',     title: '', visible: false}
+    ]);
+    this.view.onActivate = function(ev, el, item) {
+      self.onItemActivated(item);
+    };
 
     this.statusBar = this._addGUIElement(new GUI.StatusBar('ArchiverStatusBar'), root);
     this.statusBar.setText('Create new archive or open existing....');
@@ -142,11 +156,11 @@
             self._appRef.action('open', file);
           }},
           {title: API._('Add to archive'), onClick: function(ev) {
-            self._appRef.addFile(file);
+            self._appRef.addFile(file, self.currentDir);
           }}
         ], {x: ev.clientX, y: ev.clientY});
       } else {
-        self._appRef.addFile(file);
+        self._appRef.addFile(file, self.currentDir);
       }
     }
 
@@ -198,39 +212,85 @@
     }
   };
 
+  ApplicationArchiverWindow.prototype.onItemActivated = function(item) {
+    if ( item ) {
+      if ( item.type === 'dir' ) {
+        this.currentDir = item.path;
+        this._renderList();
+      }
+    }
+  };
 
-  ApplicationArchiverWindow.prototype.renderList = function(list) {
-    list = list || [];
+  ApplicationArchiverWindow.prototype._renderList = function() {
+    var dir = this.currentDir;
+    var rows = [];
+    var totalsize = 0;
 
-    var txt = '';
+    var list = this.currentList.filter(function(o) {
+      var cur = '/' + o.filename;
+      if ( (o.directory && (dir === Utils.dirname(cur))) ) {
+        return o;
+      }
+      if ( (!o.directory && (Utils.dirname(cur) === dir)) ) {
+        return o;
+      }
+
+      return false;
+    });
+
+    console.log('Rendering list', dir, list);
 
     if ( this.view ) {
-      var rows = [];
-      var total = 0;
-
-      list.forEach(function(iter) {
+      if ( dir != '/' ) {
         rows.push({
-          filename: Utils.filename(iter.filename),
-          path: Utils.dirname('/' + iter.filename),
-          size: iter.uncompressedSize
+          icon: 'places/folder.png',
+          filename: '..',
+          path: Utils.dirname(dir),
+          size: 0,
+          type: 'dir'
         });
+      }
 
-        total++;
+      var file;
+      list.forEach(function(iter) {
+        var file = {
+          icon: iter.directory ? 'places/folder.png' : 'mimetypes/gtk-file.png',
+          filename: Utils.filename('/' + iter.filename),
+          path: (iter.directory ? ('/' + iter.filename) : Utils.dirname('/' + iter.filename)).replace(/\/$/, '') || '/',
+          rsize: Utils.humanFileSize(iter.uncompressedSize),
+          csize: Utils.humanFileSize(iter.compressedSize),
+          type: iter.directory ? 'dir' : 'file',
+          comment: iter.comment || ''
+        };
+        rows.push(file);
+
+        totalsize += iter.uncompressedSize;
       });
-
-      txt = Utils.format('Entries: {0}', total);
 
       this.view.setRows(rows);
       this.view.render();
+
     }
+
     if ( this.statusBar ) {
+      var txt = Utils.format('{2} total, {0} entries in {1}', rows.length, dir, Utils.humanFileSize(totalsize));
       this.statusBar.setText(txt);
     }
+  };
+
+  ApplicationArchiverWindow.prototype.renderList = function(list, args) {
+    args = args || {};
+    list = list || [];
+
+    this.currentList = list;
+    this.currentDir = args.dir || '/';
+
+    this._renderList();
   }
 
   ApplicationArchiverWindow.prototype.onAddFileClicked = function() {
     if ( this._appRef ) {
-      this._appRef.addFile();
+      this._appRef.addFile(null, this.currentDir);
     }
   };
 
@@ -279,6 +339,7 @@
   };
 
   ApplicationArchiver.prototype.onNew = function() {
+    lastDir = '/';
     var self = this;
 
     function createEmpty(cb) {
@@ -330,13 +391,13 @@
     });
   };
 
-  ApplicationArchiver.prototype.onOpen = function(file, data) {
+  ApplicationArchiver.prototype.onOpen = function(file, data, sendArgs) {
     if ( this.mainWindow ) {
       //this.mainWindow.setChanged(false);
       this.mainWindow.setTitle(file.path);
       this.mainWindow._focus();
 
-      this.read(file);
+      this.read(file, sendArgs);
     }
   };
 
@@ -355,13 +416,13 @@
   /**
    * Sets current Zip file
    */
-  ApplicationArchiver.prototype.read = function(file) {
+  ApplicationArchiver.prototype.read = function(file, args) {
     var self = this;
 
     function onOpen(file) {
       getEntries(file, function(entries) {
         if ( self.mainWindow ) {
-          self.mainWindow.renderList(entries);
+          self.mainWindow.renderList(entries, args);
         }
       });
     }
@@ -383,7 +444,7 @@
   /**
    * Re-create zip with new file
    */
-  ApplicationArchiver.prototype.addFile = function(reqFile) {
+  ApplicationArchiver.prototype.addFile = function(reqFile, currentDir) {
     if ( !this.currentFile ) {
       throw new Error('You have to create a new archive or open a existing one to add files.');
     }
@@ -465,14 +526,14 @@
       zipWriter.close(function(blob) {
         VFS.upload({
           destination: Utils.dirname(self.currentFile.path),
-          files: [{filename: Utils.filename(self.currentFile.path), data: blob}]
+          files: [{filename: Utils.filename(self.currentFile.path), data: blob, _overwrite: true}]
           }, function(error, result) {
             console.log('Saved changes', error);
             zipWriter = null;
             if ( error ) {
               alert(error);
             } else {
-              self._onOpen(self.currentFile);
+              self._onOpen(self.currentFile, {dir: self.mainWindow ? self.mainWindow.currentDir : '/'});
             }
         });
       });
@@ -480,6 +541,8 @@
 
     function _addFile(item) {
       var filename = item instanceof window.File ? item.name : item.filename;
+
+      filename = ((currentDir || '/').replace(/\/$/, '') + '/' + filename).replace(/^\//, '');
       function _addBlob(blob) {
         zipWriter.add(filename, new zip.BlobReader(blob), function() {
           console.log('ADDED FILE', filename);

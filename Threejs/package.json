@@ -14,7 +14,9 @@
       "main.css",
       "vendor/three.js/build/three.min.js",
       "vendor/three.js/examples/js/libs/tween.min.js",
-      "vendor/three.js/examples/js/libs/stats.min.js"
+      "vendor/three.js/examples/js/libs/stats.min.js",
+      "vendor/three.js/examples/js/renderers/CanvasRenderer.js",
+      "vendor/three.js/examples/js/renderers/Projector.js"
     ]
   },
   "preload":    [

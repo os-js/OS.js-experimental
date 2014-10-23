@@ -1,3 +1,6 @@
 [submodule "DropboxVFS/vendor/dropbox-js"]
 	path = DropboxVFS/vendor/dropbox-js
 	url = https://github.com/dropbox/dropbox-js.git
+[submodule "Archiver/vendor/zip.js"]
+	path = Archiver/vendor/zip.js
+	url = https://github.com/gildas-lormeau/zip.js.git

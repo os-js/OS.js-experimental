@@ -105,8 +105,8 @@
       };
     }
 
-    menuBar.addItem(OSjs.API._('File'), [
-      {title: OSjs.API._('Close'), onClick: function() {
+    menuBar.addItem(OSjs.API._('LBL_FILE'), [
+      {title: OSjs.API._('LBL_CLOSE'), onClick: function() {
         self._close();
       }}
     ]);
@@ -194,8 +194,8 @@
     var viewRight  = panedView.createView('File');
     this.statusBar = this._addGUIElement(new GUI.StatusBar('StatusBar'), root);
 
-    menuBar.addItem(OSjs.API._('File'), [
-      {title: OSjs.API._('Close'), onClick: function() {
+    menuBar.addItem(OSjs.API._('LBL_FILE'), [
+      {title: OSjs.API._('LBL_CLOSE'), onClick: function() {
         self._close();
       }}
     ]);

@@ -3,7 +3,7 @@
   "type": "extension",
   "enabled": true,
   "config": {
-    "ClientKey": "k9pea9k3i1hmcz0"
+    "server": "ws://10.0.0.113:8085/socket"
   },
   "build": {
     "copy" : [

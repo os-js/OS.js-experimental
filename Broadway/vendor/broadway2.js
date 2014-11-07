@@ -1,8 +1,6 @@
 /**
  * This a rewrite of GTK broadway.js
  *
- * THIS IS A WORK IN PROGRESS AND NOT NEAR COMPLETION
- *
  * OS.js - JavaScript Operating System
  *
  * Copyright (c) 2011-2014, Anders Evenrud <andersevenrud@gmail.com>
@@ -1664,6 +1662,36 @@
     // TODO
   }
 
+  /**
+   * Closes a surface
+   */
+  function closeSurface(id) {
+    if ( surfaces[id] ) {
+      sendInput('W', [id]);
+    }
+  }
+
+  /**
+   * Moves a surface
+   */
+  function moveSurface(id, x, y) {
+    if ( surfaces[id] ) {
+      var surface = surfaces[id];
+      surface.x = x;
+      surface.y = y;
+      sendConfigureNotify(surface);
+    }
+  }
+
+  /**
+   * Resizes a surface
+   */
+  function resizeSurface(id, w, h) {
+    if ( surfaces[id] ) {
+      // TODO
+    }
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // EVENTS
   /////////////////////////////////////////////////////////////////////////////
@@ -2267,27 +2295,6 @@
     };
   }
 
-  /**
-   * Closes a surface
-   */
-  function closeSurface(id) {
-    if ( surfaces[id] ) {
-      sendInput('W', [id]);
-    }
-  }
-
-  /**
-   * Moves a surface
-   */
-  function moveSurface(id, x, y) {
-    if ( surfaces[id] ) {
-      var surface = surfaces[id];
-      surface.x = x;
-      surface.y = y;
-      sendConfigureNotify(surface);
-    }
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
@@ -2331,10 +2338,17 @@
   }
 
   /**
-   * Moves/Resizes a surface
+   * Moves a surface
    */
   window.GTK.move = function(id, x, y) {
     moveSurface(id, x, y);
+  };
+
+  /**
+   * Resizes a surface
+   */
+  window.GTK.resize = function(id, w, h) {
+    resizeSurface(id, w, h);
   };
 
   /**

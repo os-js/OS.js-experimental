@@ -93,11 +93,6 @@
     this._addEventListener(this._canvas, 'mouseup', function(ev) {
       return inject('mouseup', ev);
     });
-    /*
-    this._addEventListener(this._canvas, 'click', function(ev) {
-      return inject('click', ev);
-    });
-    */
     this._addEventListener(this._canvas, 'DOMMouseScroll', function(ev) {
       return inject('mousewheel', ev);
     });
@@ -109,12 +104,17 @@
     return root;
   };
 
-  BroadwayWindow.prototype._close = function() {
-    window.GTK.close(this._broadwayId);
+  BroadwayWindow.prototype.destroy = function() {
+    Window.prototype.destroy.apply(this, arguments);
+    this._canvas = null;
+  };
 
+  BroadwayWindow.prototype._close = function() {
     if ( !Window.prototype._close.apply(this, arguments) ) {
       return false;
     }
+
+    window.GTK.close(this._broadwayId);
 
     return true;
   };
@@ -143,6 +143,7 @@
     if ( ev === 'move' ) {
       window.GTK.move(this._broadwayId, this._position.x, this._position.y);
     } else if ( ev === 'resize' ) {
+      window.GTK.resize(this._broadwayId, this._dimension.w, this._dimension.h);
     }
   };
 
@@ -150,8 +151,12 @@
   // API
   /////////////////////////////////////////////////////////////////////////////
 
-  OSjs.API.createBroadwayWindow = function() {
-    var host = 'ws://10.0.0.113:8085/socket';
+
+  OSjs.Core.Broadway = {};
+  OSjs.Core.Broadway.init = function() {
+    var metadata = API.getHandlerInstance().getApplicationMetadata("ExtensionBroadway");
+    var config = metadata.config;
+    var host = config.server;
     var wm = API.getWMInstance();
 
     window.GTK.connect(host, {

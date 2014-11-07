@@ -1491,7 +1491,7 @@
     case 91 : keysym = 123; break; // { (shifted [)
     case 92 : keysym = 124; break; // | (shifted \)
     case 93 : keysym = 125; break; // } (shifted ])
-    case 39 : keysym = 34 ; break; // " (shifted ')
+    case 39 : keysym = 34 ; break; // ' (shifted ')
     }
       } else if ((keysym >= 65) && (keysym <=90)) {
     /* Remap unshifted A-Z */
@@ -1519,7 +1519,7 @@
   }
 
   function getEventKeySym(ev) {
-      if (typeof ev.which !== "undefined" && ev.which > 0)
+      if (typeof ev.which !== 'undefined' && ev.which > 0)
     return ev.which;
       return ev.keyCode;
   }
@@ -2025,7 +2025,7 @@
     var i, fev = null;
     for (i = keyDownList.length-1; i >= 0; i--) {
       if ( keyDownList[i].keyCode === keyCode ) {
-        if ((typeof pop !== "undefined") && pop)
+        if ((typeof pop !== 'undefined') && pop)
           fev = keyDownList.splice(i, 1)[0];
         else
           fev = keyDownList[i];
@@ -2055,7 +2055,7 @@
     var members = ['type', 'keyCode', 'charCode', 'which', 'altKey', 'ctrlKey', 'shiftKey', 'keyLocation', 'keyIdentifier'];
     var i, obj = {};
     for (i = 0; i < members.length; i++) {
-      if (typeof ev[members[i]] !== "undefined")
+      if (typeof ev[members[i]] !== 'undefined')
         obj[members[i]] = ev[members[i]];
     }
     return obj;
@@ -2077,7 +2077,7 @@
 
       if ( keysym ) {
         if ( !ignoreKeyEvent(ev) ) {
-          sendInput("k", [id, keysym, lastState]);
+          sendInput('k', [id, keysym, lastState]);
         }
         suppress = true;
       }
@@ -2107,7 +2107,7 @@
 
       console.debug('Broadway', 'handleKeyUp()', fev, keysym);
       if ( keysym > 0 ) {
-        sendInput("K", [id, keysym, lastState]);
+        sendInput('K', [id, keysym, lastState]);
       }
     }
 
@@ -2122,7 +2122,7 @@
 
     if ( surfaces[id] ) {
 
-      if (((ev.which !== "undefined") && (ev.which === 0)) || getKeysymSpecial(ev)) {
+      if (((ev.which !== 'undefined') && (ev.which === 0)) || getKeysymSpecial(ev)) {
         return cancelEvent(ev);
       }
 
@@ -2136,7 +2136,7 @@
       }
 
       if ( keysym > 0 ) {
-        sendInput("k", [id, keysym, lastState]);
+        sendInput('k', [id, keysym, lastState]);
       }
     }
 
@@ -2153,7 +2153,7 @@
       var dir = offset > 0 ? 1 : 0;
 
       console.debug('Broadway', 'handleMouseWheel()', dir);
-      sendInput("s", [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, dir]);
+      sendInput('s', [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, dir]);
     }
     return true;
   }
@@ -2165,7 +2165,7 @@
     updateForEvent(ev);
     if ( surfaces[id] ) {
       //console.debug('Broadway', 'handleMouseMove()', opts);
-      sendInput("m", [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState]);
+      sendInput('m', [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState]);
     }
     return true;
   }
@@ -2180,8 +2180,8 @@
 
     if ( surfaces[id] ) {
       console.debug('Broadway', 'handleMouseDown()', opts);
-      sendInput("b", [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, button]);
-      sendInput("e", [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, GDK_CROSSING_NORMAL]);
+      sendInput('b', [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, button]);
+      sendInput('e', [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, GDK_CROSSING_NORMAL]);
     }
     return true;
   }
@@ -2195,7 +2195,7 @@
     lastState = lastState & ~getButtonMask (button);
     if ( surfaces[id] ) {
       console.debug('Broadway', 'handleMouseUp()', opts);
-      sendInput("B", [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, button]);
+      sendInput('B', [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, button]);
     }
     return true;
   }
@@ -2267,6 +2267,27 @@
     };
   }
 
+  /**
+   * Closes a surface
+   */
+  function closeSurface(id) {
+    if ( surfaces[id] ) {
+      sendInput('W', [id]);
+    }
+  }
+
+  /**
+   * Moves a surface
+   */
+  function moveSurface(id, x, y) {
+    if ( surfaces[id] ) {
+      var surface = surfaces[id];
+      surface.x = x;
+      surface.y = y;
+      sendConfigureNotify(surface);
+    }
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
@@ -2303,15 +2324,17 @@
   };
 
   /**
+   * Closes a surface
+   */
+  window.GTK.close = function(id) {
+    closeSurface(id);
+  }
+
+  /**
    * Moves/Resizes a surface
    */
   window.GTK.move = function(id, x, y) {
-    if ( surfaces[id] ) {
-      var surface = surfaces[id];
-      surface.x = x;
-      surface.y = y;
-      sendConfigureNotify(surface);
-    }
+    moveSurface(id, x, y);
   };
 
   /**

@@ -109,6 +109,16 @@
     return root;
   };
 
+  BroadwayWindow.prototype._close = function() {
+    window.GTK.close(this._broadwayId);
+
+    if ( !Window.prototype._close.apply(this, arguments) ) {
+      return false;
+    }
+
+    return true;
+  };
+
   BroadwayWindow.prototype._focus = function() {
     if ( !Window.prototype._focus.apply(this, arguments) ) {
       return false;

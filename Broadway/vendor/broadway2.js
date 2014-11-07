@@ -40,7 +40,6 @@
   var outstandingCommands = [];
   var lastSerial = 0;
   var surfaces = {};
-
   var base64Values = [
       255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
       255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
@@ -52,145 +51,147 @@
       41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,255,255,255,255,255
   ];
 
+  /////////////////////////////////////////////////////////////////////////////
+  // HELPERS
+  /////////////////////////////////////////////////////////////////////////////
+
   function base64_8(str, index) {
-      var v =
-    (base64Values[str.charCodeAt(index)]) +
-    (base64Values[str.charCodeAt(index+1)] << 6);
-      return v;
+    var v =
+      (base64Values[str.charCodeAt(index)]) +
+      (base64Values[str.charCodeAt(index+1)] << 6);
+    return v;
   }
 
   function base64_16(str, index) {
-      var v =
-    (base64Values[str.charCodeAt(index)]) +
-    (base64Values[str.charCodeAt(index+1)] << 6) +
-    (base64Values[str.charCodeAt(index+2)] << 12);
-      return v;
+    var v =
+      (base64Values[str.charCodeAt(index)]) +
+      (base64Values[str.charCodeAt(index+1)] << 6) +
+      (base64Values[str.charCodeAt(index+2)] << 12);
+    return v;
   }
 
   function base64_16s(str, index) {
-      var v = base64_16(str, index);
-      if (v > 32767)
-    return v - 65536;
-      else
+    var v = base64_16(str, index);
+    if (v > 32767) return v - 65536;
     return v;
   }
 
   function base64_24(str, index) {
-      var v =
-    (base64Values[str.charCodeAt(index)]) +
-    (base64Values[str.charCodeAt(index+1)] << 6) +
-    (base64Values[str.charCodeAt(index+2)] << 12) +
-    (base64Values[str.charCodeAt(index+3)] << 18);
-      return v;
+    var v =
+      (base64Values[str.charCodeAt(index)]) +
+      (base64Values[str.charCodeAt(index+1)] << 6) +
+      (base64Values[str.charCodeAt(index+2)] << 12) +
+      (base64Values[str.charCodeAt(index+3)] << 18);
+    return v;
   }
 
   function base64_32(str, index) {
-      var v =
-    (base64Values[str.charCodeAt(index)]) +
-    (base64Values[str.charCodeAt(index+1)] << 6) +
-    (base64Values[str.charCodeAt(index+2)] << 12) +
-    (base64Values[str.charCodeAt(index+3)] << 18) +
-    (base64Values[str.charCodeAt(index+4)] << 24) +
-    (base64Values[str.charCodeAt(index+5)] << 30);
-      return v;
+    var v =
+      (base64Values[str.charCodeAt(index)]) +
+      (base64Values[str.charCodeAt(index+1)] << 6) +
+      (base64Values[str.charCodeAt(index+2)] << 12) +
+      (base64Values[str.charCodeAt(index+3)] << 18) +
+      (base64Values[str.charCodeAt(index+4)] << 24) +
+      (base64Values[str.charCodeAt(index+5)] << 30);
+    return v;
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // WRAPPERS
   /////////////////////////////////////////////////////////////////////////////
 
+  /**
+   * Command for text-based connection
+   */
   function TextCommands(message) {
-      this.data = message;
-      this.length = message.length;
-      this.pos = 0;
+    this.data = message;
+    this.length = message.length;
+    this.pos = 0;
   }
-
   TextCommands.prototype.get_char = function() {
-      return this.data[this.pos++];
+    return this.data[this.pos++];
   };
   TextCommands.prototype.get_bool = function() {
-      return this.get_char() == '1';
+    return this.get_char() == '1';
   };
   TextCommands.prototype.get_flags = function() {
-      return this.get_char() - 48;
+    return this.get_char() - 48;
   }
   TextCommands.prototype.get_16 = function() {
-      var n = base64_16(this.data, this.pos);
-      this.pos = this.pos + 3;
-      return n;
+    var n = base64_16(this.data, this.pos);
+    this.pos = this.pos + 3;
+    return n;
   };
   TextCommands.prototype.get_16s = function() {
-      var n = base64_16s(this.data, this.pos);
-      this.pos = this.pos + 3;
-      return n;
+    var n = base64_16s(this.data, this.pos);
+    this.pos = this.pos + 3;
+    return n;
   };
   TextCommands.prototype.get_32 = function() {
-      var n = base64_32(this.data, this.pos);
-      this.pos = this.pos + 6;
-      return n;
+    var n = base64_32(this.data, this.pos);
+    this.pos = this.pos + 6;
+    return n;
   };
   TextCommands.prototype.get_image_url = function() {
-      var size = this.get_32();
-      var url = this.data.slice(this.pos, this.pos + size);
-      this.pos = this.pos + size;
-      return url;
+    var size = this.get_32();
+    var url = this.data.slice(this.pos, this.pos + size);
+    this.pos = this.pos + size;
+    return url;
   };
   TextCommands.prototype.free_image_url = function(url) {
   };
 
+  /**
+   * Command for binary/arraybuffer connection
+   */
   function BinCommands(message) {
-      this.arraybuffer = message;
-      this.u8 = new Uint8Array(message);
-      this.length = this.u8.length;
-      this.pos = 0;
+    this.arraybuffer = message;
+    this.u8 = new Uint8Array(message);
+    this.length = this.u8.length;
+    this.pos = 0;
   }
-
   BinCommands.prototype.get_char = function() {
-      return String.fromCharCode(this.u8[this.pos++]);
+    return String.fromCharCode(this.u8[this.pos++]);
   };
   BinCommands.prototype.get_bool = function() {
-      return this.u8[this.pos++] != 0;
+    return this.u8[this.pos++] != 0;
   };
   BinCommands.prototype.get_flags = function() {
-      return this.u8[this.pos++];
+    return this.u8[this.pos++];
   }
   BinCommands.prototype.get_16 = function() {
-      var v =
-    this.u8[this.pos] +
-    (this.u8[this.pos+1] << 8);
-      this.pos = this.pos + 2;
-      return v;
+    var v = this.u8[this.pos] + (this.u8[this.pos+1] << 8);
+    this.pos = this.pos + 2;
+    return v;
   };
   BinCommands.prototype.get_16s = function() {
-      var v = this.get_16 ();
-      if (v > 32767)
-    return v - 65536;
-      else
+    var v = this.get_16 ();
+    if (v > 32767) return v - 65536;
     return v;
   };
   BinCommands.prototype.get_32 = function() {
-      var v =
-    this.u8[this.pos] +
-    (this.u8[this.pos+1] << 8) +
-    (this.u8[this.pos+2] << 16) +
-    (this.u8[this.pos+3] << 24);
-      this.pos = this.pos + 4;
-      return v;
+    var v = this.u8[this.pos] +
+            (this.u8[this.pos+1] << 8) +
+            (this.u8[this.pos+2] << 16) +
+            (this.u8[this.pos+3] << 24);
+
+    this.pos = this.pos + 4;
+    return v;
   };
   BinCommands.prototype.get_image_url = function() {
-      var size = this.get_32();
-      var png_blob = new Blob ([new Uint8Array (this.arraybuffer, this.pos, size)], {type:'image/png'});
-      var url;
-      if (window.webkitURL)
-    url = window.webkitURL.createObjectURL(png_blob);
-      else
-    url = window.URL.createObjectURL(png_blob, {oneTimeOnly: true});
-      this.pos = this.pos + size;
-      return url;
+    var size = this.get_32();
+    var png_blob = new Blob ([new Uint8Array (this.arraybuffer, this.pos, size)], {type:'image/png'});
+    var url;
+    if (window.webkitURL) {
+      url = window.webkitURL.createObjectURL(png_blob);
+    } else {
+      url = window.URL.createObjectURL(png_blob, {oneTimeOnly: true});
+    }
+    this.pos = this.pos + size;
+    return url;
   };
   BinCommands.prototype.free_image_url = function(url) {
-      URL.revokeObjectURL(url);
+    URL.revokeObjectURL(url);
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -209,10 +210,6 @@
     // TODO
   }
 
-  function doUnknownCommand(command) {
-    console.error('Invalid command', command);
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // EVENTS
   /////////////////////////////////////////////////////////////////////////////
@@ -227,14 +224,6 @@
     var w = cmd.get_16();
     var h = cmd.get_16();
     var isTemp = cmd.get_bool();
-
-    console.debug('Broadway', 'onCreateSurface()', id, x, y, w, h);
-    //cmdCreateSurface(id, x, y, w, h, isTemp);
-
-    if ( !isTemp && globalOpts.onCreateSurface ) {
-      globalOpts.onCreateSurface(id, x, y, w, h);
-    }
-
     var surface = { id: id, x: x, y:y, width: w, height: h, isTemp: isTemp };
     surface.positioned = isTemp;
     surface.drawQueue = [];
@@ -243,6 +232,11 @@
     surface.frame = null;
     surfaces[id] = surface;
     sendConfigureNotify(surface);
+
+    console.debug('Broadway', 'onCreateSurface()', id, x, y, w, h);
+    if ( !isTemp && globalOpts.onCreateSurface ) {
+      globalOpts.onCreateSurface(id, x, y, w, h);
+    }
   }
 
   /**
@@ -250,10 +244,15 @@
    */
   function onShowSurface(cmd) {
     var id = cmd.get_16();
+    var surface = surfaces[id];
 
-    console.debug('Broadway', 'onShowSurface()', id);
-    if ( globalOpts.onShowSurface ) {
-      globalOpts.onShowSurface(id);
+    if ( surface ) {
+      surface.visible = true;
+
+      console.debug('Broadway', 'onShowSurface()', id);
+      if ( globalOpts.onShowSurface ) {
+        globalOpts.onShowSurface(id);
+      }
     }
   }
 
@@ -262,10 +261,15 @@
    */
   function onHideSurface(cmd) {
     var id = cmd.get_16();
+    var surface = surfaces[id];
 
-    console.debug('Broadway', 'onHideSurface()', id);
-    if ( globalOpts.onHideSurface ) {
-      globalOpts.onHideSurface(id);
+    if ( surface ) {
+      surface.visible = false;
+
+      console.debug('Broadway', 'onHideSurface()', id);
+      if ( globalOpts.onHideSurface ) {
+        globalOpts.onHideSurface(id);
+      }
     }
   }
 
@@ -278,12 +282,12 @@
     var surface = surfaces[id];
 
     if ( surface ) {
-      surface.transientParent = parentId;
-    }
+      console.debug('Broadway', 'onSetTransient()', id, parentId);
 
-    console.debug('Broadway', 'onSetTransient()', id, parentId);
-    if ( globalOpts.onSetTransient ) {
-      globalOpts.onSetTransient(id, parentId);
+      surface.transientParent = parentId;
+      if ( globalOpts.onSetTransient ) {
+        globalOpts.onSetTransient(id, parentId);
+      }
     }
   }
 
@@ -292,10 +296,9 @@
    */
   function onDeleteSurface(cmd) {
     var id = cmd.get_16();
+    var surface = surfaces[id];
 
     console.debug('Broadway', 'onDeleteSurface()', id);
-
-    var surface = surfaces[id];
     if ( surface && globalOpts.onDeleteSurface ) {
       globalOpts.onDeleteSurface(id);
       delete surfaces[id];
@@ -311,7 +314,6 @@
     var has_pos = ops & 1;
 
     var x, y, w, h;
-
     if (has_pos) {
       x = cmd.get_16s();
       y = cmd.get_16s();
@@ -364,27 +366,30 @@
    * On Copy Rects Event
    */
   function onCopyRects(cmd) {
-    var q = {
-      op: 'b',
-      id: cmd.get_16(),
-      rects: []
-    };
+    var id = cmd.get_16();
+    if ( surfaces[id] ) {
+      console.debug('Broadway', 'onCopyRects()', id);
 
-    var nrects = cmd.get_16();
-    for (var r = 0; r < nrects; r++) {
-      q.rects.push({
-        x: cmd.get_16(),
-        y: cmd.get_16(),
-        w: cmd.get_16(),
-        h: cmd.get_16()
-      });
+      var q = {
+        op: 'b',
+        id: id,
+        rects: []
+      };
+
+      var nrects = cmd.get_16();
+      for (var r = 0; r < nrects; r++) {
+        q.rects.push({
+          x: cmd.get_16(),
+          y: cmd.get_16(),
+          w: cmd.get_16(),
+          h: cmd.get_16()
+        });
+      }
+
+      q.dx = cmd.get_16s();
+      q.dy = cmd.get_16s();
+      surfaces[q.id].drawQueue.push(q);
     }
-
-    q.dx = cmd.get_16s();
-    q.dy = cmd.get_16s();
-    surfaces[q.id].drawQueue.push(q);
-
-    console.debug('Broadway', 'onCopyRects()', q);
   }
 
   /**
@@ -392,46 +397,48 @@
    */
   function onFlushSurface(cmd) {
     var id = cmd.get_16();
-
-    console.debug('Broadway', 'onFlushSurface()', id);
-
-    var canvas;
     var surface = surfaces[id];
-    if ( globalOpts.onFlushSurface ) {
-      canvas = globalOpts.onFlushSurface(id);
-    }
 
-    if ( surface && canvas ) {
-      var commands = surface.drawQueue;
-      var context = canvas.getContext('2d');
-      context.globalCompositeOperation = 'source-over';
+    if ( surface ) {
+      console.debug('Broadway', 'onFlushSurface()', id);
 
-      var i = 0;
-      var cmd, j, rect;
-      for (i; i < commands.length; i++) {
-        cmd = commands[i];
-        switch (cmd.op) {
-          case 'i': // put image data surface
-            context.globalCompositeOperation = 'source-over';
-            context.drawImage(cmd.img, cmd.x, cmd.y);
-            break;
+      var canvas;
+      if ( globalOpts.onFlushSurface ) {
+        canvas = globalOpts.onFlushSurface(id);
+      }
 
-          case 'b': // copy rects
-            context.save();
-            context.beginPath();
+      if ( surface && canvas ) {
+        var commands = surface.drawQueue;
+        var context = canvas.getContext('2d');
+        context.globalCompositeOperation = 'source-over';
 
-            for (j = 0; j < cmd.rects.length; j++) {
-              rect = cmd.rects[j];
-              context.rect(rect.x, rect.y, rect.w, rect.h);
-            }
+        var i = 0;
+        var cmd, j, rect;
+        for (i; i < commands.length; i++) {
+          cmd = commands[i];
+          switch (cmd.op) {
+            case 'i': // put image data surface
+              context.globalCompositeOperation = 'source-over';
+              context.drawImage(cmd.img, cmd.x, cmd.y);
+              break;
 
-            context.clip();
-            context.drawImage(surface.canvas, cmd.dx, cmd.dy);
-            context.restore();
-            break;
+            case 'b': // copy rects
+              context.save();
+              context.beginPath();
 
-          default:
-            console.warn('Broadway', 'onFlushSurface()', 'Invalid command', cmd.op, cmd);
+              for (j = 0; j < cmd.rects.length; j++) {
+                rect = cmd.rects[j];
+                context.rect(rect.x, rect.y, rect.w, rect.h);
+              }
+
+              context.clip();
+              context.drawImage(surface.canvas, cmd.dx, cmd.dy);
+              context.restore();
+              break;
+
+            default:
+              console.warn('Broadway', 'onFlushSurface()', 'Invalid command', cmd.op, cmd);
+          }
         }
       }
     }
@@ -445,7 +452,6 @@
     var ownerEvents = cmd.get_bool();
 
     // TODO
-
     sendInput('g', []);
     console.debug('Broadway', 'onGrabPointer()', id, ownerEvents);
   }
@@ -457,12 +463,11 @@
     sendInput('u', []);
 
     // TODO
-
     console.debug('Broadway', 'onUngrabPointer()');
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // MESSAGING
+  // ACTIONS
   /////////////////////////////////////////////////////////////////////////////
 
   /**
@@ -500,7 +505,6 @@
     };
 
     while (cmd.pos < cmd.length) {
-      var id, x, y, w, h, q;
       var command = cmd.get_char();
       lastSerial = cmd.get_32();
 
@@ -511,7 +515,7 @@
           return false;
         }
       } else {
-        doUnknownCommand(command);
+        console.error('Invalid command', command);
       }
     }
 
@@ -539,31 +543,6 @@
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Create a new WebSocket
-   */
-  function createSocket(loc) {
-    return new WebSocket(loc, 'broadway');
-  }
-
-  /**
-   * On open() in socket
-   */
-  function onSocketOpen() {
-    if ( globalOpts.onSocketOpen ) {
-      globalOpts.onSocketOpen();
-    }
-  }
-
-  /**
-   * On close() in socket
-   */
-  function onSocketClose() {
-    if ( globalOpts.onSocketClose ) {
-      globalOpts.onSocketClose();
-    }
-  }
-
-  /**
    * On message() in socket
    */
   function onSocketMessage(message) {
@@ -584,6 +563,22 @@
    * Connects to Broadway server
    */
   function connect(hostname) {
+    function createSocket(loc) {
+      return new WebSocket(loc, 'broadway');
+    }
+
+    function onSocketOpen() {
+      if ( globalOpts.onSocketOpen ) {
+        globalOpts.onSocketOpen();
+      }
+    }
+
+    function onSocketClose() {
+      if ( globalOpts.onSocketClose ) {
+        globalOpts.onSocketClose();
+      }
+    }
+
     var supports_binary = createSocket(hostname + '-test').binaryType === 'blob';
     if ( supports_binary ) {
       connection = createSocket(hostname + '-bin');
@@ -636,6 +631,11 @@
    *
    */
   window.GTK.connect = function(host, opts) {
+    if ( connection ) {
+      console.error('Broadway', 'Only one connection allowed!');
+      return;
+    }
+
     globalOpts = opts || {};
     connect(host);
   };
@@ -644,6 +644,10 @@
    * Inject keyboard/mouse event
    */
   window.GTK.inject = function(type, name, value) {
+    if ( !connection ) {
+      console.error('Broadway', 'No connections created!');
+      return;
+    }
   };
 
 })();

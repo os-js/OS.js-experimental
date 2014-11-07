@@ -615,10 +615,34 @@
   /////////////////////////////////////////////////////////////////////////////
 
   window.GTK = window.GTK || {};
+
+  /**
+   * Connect to broadway
+   *
+   * Available callbacks in opts:
+   *
+   *   onImageData        REQUIRED    Return your canvas object here
+   *
+   *   onCreateSurface
+   *   onShowSurface
+   *   onHideSurface
+   *   onSetTransien
+   *   onDeleteSurface
+   *   onMoveSurface
+   *   onFlushSurface
+   *
+   *   onSocketOpen
+   *   onSocketClose
+   *
+   */
   window.GTK.connect = function(host, opts) {
     globalOpts = opts || {};
     connect(host);
   };
+
+  /**
+   * Inject keyboard/mouse event
+   */
   window.GTK.inject = function(type, name, value) {
   };
 

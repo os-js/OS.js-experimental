@@ -129,6 +129,13 @@
     window.GTK.inject(this._broadwayId, type, ev);
   };
 
+  BroadwayWindow.prototype._onChange = function(ev) {
+    if ( ev === 'move' ) {
+      window.GTK.move(this._broadwayId, this._position.x, this._position.y);
+    } else if ( ev === 'resize' ) {
+    }
+  };
+
   /////////////////////////////////////////////////////////////////////////////
   // API
   /////////////////////////////////////////////////////////////////////////////

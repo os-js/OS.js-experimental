@@ -2303,6 +2303,18 @@
   };
 
   /**
+   * Moves/Resizes a surface
+   */
+  window.GTK.move = function(id, x, y) {
+    if ( surfaces[id] ) {
+      var surface = surfaces[id];
+      surface.x = x;
+      surface.y = y;
+      sendConfigureNotify(surface);
+    }
+  };
+
+  /**
    * Inject keyboard/mouse event
    */
   window.GTK.inject = function(id, type, ev, opts) {

@@ -48,13 +48,11 @@
     this._position.y  = y;
     this._title       = 'Broadway Window ' + id.toString();
 
-    this._properties.gravity          = 'center';
     this._properties.allow_resize     = false;
     this._properties.allow_minimize   = false;
     this._properties.allow_maximize   = false;
-    this._properties.allow_windowlist = false;
     this._properties.allow_session    = false;
-    this._state.ontop                 = true;
+    this._properties.key_capture      = true; // IMPORTANT
 
     this._broadwayId = id;
     this._canvas = document.createElement('canvas');
@@ -78,31 +76,33 @@
 
     function inject(type, ev) {
       var pos = getMousePos(ev);
-      window.GTK.inject(self._broadwayId, type, ev, {
+      return window.GTK.inject(self._broadwayId, type, ev, {
         wx: self._position.x,
         wy: self._position.y,
-        mx: pos.x,
-        my: pos.y
+        mx: parseInt(pos.x, 0),
+        my: parseInt(pos.y, 0)
       });
     }
 
     this._addEventListener(this._canvas, 'mousemove', function(ev) {
-      inject('mousemove', ev);
+      return inject('mousemove', ev);
     });
     this._addEventListener(this._canvas, 'mousedown', function(ev) {
-      inject('mousedown', ev);
+      return inject('mousedown', ev);
     });
     this._addEventListener(this._canvas, 'mouseup', function(ev) {
-      inject('mouseup', ev);
+      return inject('mouseup', ev);
     });
+    /*
     this._addEventListener(this._canvas, 'click', function(ev) {
-      inject('click', ev);
+      return inject('click', ev);
     });
+    */
     this._addEventListener(this._canvas, 'DOMMouseScroll', function(ev) {
-      inject('mousewheel', ev);
+      return inject('mousewheel', ev);
     });
     this._addEventListener(this._canvas, 'mousewheel', function(ev) {
-      inject('mousewheel', ev);
+      return inject('mousewheel', ev);
     });
 
     root.appendChild(this._canvas);
@@ -126,7 +126,7 @@
   };
 
   BroadwayWindow.prototype._onKeyEvent = function(ev, type) {
-    window.GTK.inject(type, ev);
+    window.GTK.inject(this._broadwayId, type, ev);
   };
 
   /////////////////////////////////////////////////////////////////////////////

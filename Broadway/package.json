@@ -13,7 +13,7 @@
     ]
   },
   "sources": [
-    {"type": "javascript", "src": "vendor/broadway2.js", "preload": true},
+    {"type": "javascript", "src": "vendor/broadway2.js"},
     {"type": "javascript", "src": "broadway.js"}
   ]
 }

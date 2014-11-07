@@ -32,6 +32,47 @@
 
   var _WIN;
 
+  function createNotification() {
+    var wm = API.getWMInstance();
+
+    function displayMenu(ev) {
+      var pos = {x: ev.clientX, y: ev.clientY};
+      OSjs.GUI.createMenu([{
+        title: 'Disconnect from Broadway server',
+        onClick: function() {
+          window.GTK.disconnect();
+        }
+      }], pos);
+    }
+
+    if ( wm ) {
+      wm.createNotificationIcon('BroadwayService', {
+        onContextMenu: function(ev) {
+          displayMenu(ev);
+          return false;
+        },
+        onClick: function(ev) {
+          displayMenu(ev);
+          return false;
+        },
+        onInited: function(el) {
+          if ( el.firstChild ) {
+            var img = document.createElement('img');
+            img.src = API.getThemeResource('status/network-transmit-receive.png', 'icon', '16x16');
+            el.firstChild.appendChild(img);
+          }
+        }
+      });
+    }
+  }
+
+  function removeNotification() {
+    var wm = API.getWMInstance();
+    if ( wm ) {
+      wm.removeNotificationIcon('BroadwayService');
+    }
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // WINDOW
   /////////////////////////////////////////////////////////////////////////////
@@ -160,6 +201,14 @@
     var wm = API.getWMInstance();
 
     window.GTK.connect(host, {
+      onSocketOpen: function() {
+        createNotification();
+      },
+
+      onSocketClose: function() {
+        removeNotification();
+      },
+
       onFlushSurface: function(id, q) {
         if ( wm ) {
           var win = wm.getWindow('BroadwayWindow' + id);

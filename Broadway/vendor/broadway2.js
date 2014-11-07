@@ -31,6 +31,7 @@
  */
 (function() {
 
+  var connected = false;
   var lastTimeStamp = 0;
   var lastState;
   var inputSocket = null;
@@ -2011,6 +2012,8 @@
    * Send configuration notification
    */
   function sendConfigureNotify(surface) {
+    if ( !connected ) { return; }
+
     sendInput('w', [surface.id, surface.x, surface.y, surface.width, surface.height]);
   }
 
@@ -2018,6 +2021,8 @@
    * Send input
    */
   function sendInput(cmd, args) {
+    if ( !connected ) { return; }
+
     if ( inputSocket != null ) {
       inputSocket.send(cmd + ([lastSerial, lastTimeStamp].concat(args)).join(','));
     }
@@ -2258,6 +2263,8 @@
     }
 
     function onSocketOpen() {
+      connected = true;
+
       if ( globalOpts.onSocketOpen ) {
         globalOpts.onSocketOpen();
       }
@@ -2300,6 +2307,30 @@
   /////////////////////////////////////////////////////////////////////////////
 
   window.GTK = window.GTK || {};
+
+  window.GTK.disconnect = function() {
+    if ( connection && connected ) {
+      connection.close();
+    }
+
+    Object.keys(surfaces).forEach(function(i) {
+      if ( i && surfaces[i] ) {
+        if ( globalOpts.onDeleteSurface ) {
+          globalOpts.onDeleteSurface(i);
+        }
+      }
+    });
+
+    connected = false;
+    surfaces = {};
+    lastTimeStamp = 0;
+    lastState = null;
+    keyDownList = [];
+    lastSerial = 0;
+    outstandingCommands = [];
+
+    connection.onclose();
+  };
 
   /**
    * Connect to broadway

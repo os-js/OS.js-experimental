@@ -33,7 +33,7 @@
   var _WIN;
 
   /////////////////////////////////////////////////////////////////////////////
-  // API
+  // WINDOW
   /////////////////////////////////////////////////////////////////////////////
 
   /**
@@ -56,19 +56,82 @@
     this._properties.allow_session    = false;
     this._state.ontop                 = true;
 
-    _WIN = this;
+    this._broadwayId = id;
     this._canvas = document.createElement('canvas');
   };
 
   BroadwayWindow.prototype = Object.create(Window.prototype);
 
   BroadwayWindow.prototype.init = function() {
+    var self = this;
     var root = Window.prototype.init.apply(this, arguments);
     this._canvas.width = this._dimension.w;
     this._canvas.height = this._dimension.h;
+
+
+    function getMousePos(ev) {
+      return {
+        x:ev.pageX - self._position.x,
+        y:ev.pageY - self._position.y - 26 // FIXME
+      };
+    }
+
+    function inject(type, ev) {
+      var pos = getMousePos(ev);
+      window.GTK.inject(self._broadwayId, type, ev, {
+        wx: self._position.x,
+        wy: self._position.y,
+        mx: pos.x,
+        my: pos.y
+      });
+    }
+
+    this._addEventListener(this._canvas, 'mousemove', function(ev) {
+      inject('mousemove', ev);
+    });
+    this._addEventListener(this._canvas, 'mousedown', function(ev) {
+      inject('mousedown', ev);
+    });
+    this._addEventListener(this._canvas, 'mouseup', function(ev) {
+      inject('mouseup', ev);
+    });
+    this._addEventListener(this._canvas, 'click', function(ev) {
+      inject('click', ev);
+    });
+    this._addEventListener(this._canvas, 'DOMMouseScroll', function(ev) {
+      inject('mousewheel', ev);
+    });
+    this._addEventListener(this._canvas, 'mousewheel', function(ev) {
+      inject('mousewheel', ev);
+    });
+
     root.appendChild(this._canvas);
     return root;
   };
+
+  BroadwayWindow.prototype._focus = function() {
+    if ( !Window.prototype._focus.apply(this, arguments) ) {
+      return false;
+    }
+    _WIN = this;
+    return true;
+  };
+
+  BroadwayWindow.prototype._blur = function() {
+    if ( !Window.prototype._blur.apply(this, arguments) ) {
+      return false;
+    }
+    _WIN = null;
+    return true;
+  };
+
+  BroadwayWindow.prototype._onKeyEvent = function(ev, type) {
+    window.GTK.inject(type, ev);
+  };
+
+  /////////////////////////////////////////////////////////////////////////////
+  // API
+  /////////////////////////////////////////////////////////////////////////////
 
   OSjs.API.createBroadwayWindow = function() {
     var host = 'ws://10.0.0.113:8085/socket';
@@ -129,6 +192,7 @@
       onCreateSurface: function(id, x, y, w, h) {
         var win = new BroadwayWindow(id, x, y, w, h);
         wm.addWindow(win);
+        return win._canvas;
       }
 
     });

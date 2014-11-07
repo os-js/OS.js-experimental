@@ -34,6 +34,7 @@
 (function() {
 
   var lastTimeStamp = 0;
+  var lastState;
   var inputSocket = null;
   var globalOpts = {};
   var connection;
@@ -50,6 +51,29 @@
       255, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
       41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,255,255,255,255,255
   ];
+
+  var GDK_CROSSING_NORMAL = 0;
+  var GDK_CROSSING_GRAB = 1;
+  var GDK_CROSSING_UNGRAB = 2;
+
+  // GdkModifierType
+  var GDK_SHIFT_MASK = 1 << 0;
+  var GDK_LOCK_MASK     = 1 << 1;
+  var GDK_CONTROL_MASK  = 1 << 2;
+  var GDK_MOD1_MASK     = 1 << 3;
+  var GDK_MOD2_MASK     = 1 << 4;
+  var GDK_MOD3_MASK     = 1 << 5;
+  var GDK_MOD4_MASK     = 1 << 6;
+  var GDK_MOD5_MASK     = 1 << 7;
+  var GDK_BUTTON1_MASK  = 1 << 8;
+  var GDK_BUTTON2_MASK  = 1 << 9;
+  var GDK_BUTTON3_MASK  = 1 << 10;
+  var GDK_BUTTON4_MASK  = 1 << 11;
+  var GDK_BUTTON5_MASK  = 1 << 12;
+  var GDK_SUPER_MASK    = 1 << 26;
+  var GDK_HYPER_MASK    = 1 << 27;
+  var GDK_META_MASK     = 1 << 28;
+  var GDK_RELEASE_MASK  = 1 << 30;
 
   /////////////////////////////////////////////////////////////////////////////
   // HELPERS
@@ -235,7 +259,10 @@
 
     console.debug('Broadway', 'onCreateSurface()', id, x, y, w, h);
     if ( !isTemp && globalOpts.onCreateSurface ) {
-      globalOpts.onCreateSurface(id, x, y, w, h);
+      var canvas = globalOpts.onCreateSurface(id, x, y, w, h);
+      if ( canvas ) {
+        canvas.surfaceId = id;
+      }
     }
   }
 
@@ -538,6 +565,102 @@
     }
   }
 
+  /**
+   * Update last input state
+   */
+  function updateForEvent(ev) {
+    lastState &= ~(GDK_SHIFT_MASK|GDK_CONTROL_MASK|GDK_MOD1_MASK);
+    if (ev.shiftKey) lastState |= GDK_SHIFT_MASK;
+    if (ev.ctrlKey) lastState |= GDK_CONTROL_MASK;
+    if (ev.altKey) lastState |= GDK_MOD1_MASK;
+    lastTimeStamp = ev.timeStamp;
+  }
+
+  /**
+   * Get GDK button mask from DOM Event
+   */
+  function getButtonMask (button) {
+    if (button == 1) return GDK_BUTTON1_MASK;
+    if (button == 2) return GDK_BUTTON2_MASK;
+    if (button == 3) return GDK_BUTTON3_MASK;
+    if (button == 4) return GDK_BUTTON4_MASK;
+    if (button == 5) return GDK_BUTTON5_MASK;
+    return 0;
+  }
+
+  /**
+   * Keyboard Down
+   */
+  function handleKeyDown(id, ev) {
+    // TODO
+  }
+
+  /**
+   * Keyboard Up
+   */
+  function handleKeyUp(id, ev) {
+    // TODO
+  }
+
+  /**
+   * Keyboard Press
+   */
+  function handleKeyPress(id, ev) {
+    // TODO
+  }
+
+  /**
+   * Mouse Wheel
+   */
+  function handleMouseWheel(id, ev, opts) {
+    updateForEvent(ev);
+    if ( surfaces[id] ) {
+      var offset = ev.detail ? ev.detail : -ev.wheelDelta;
+      var dir = offset > 0 ? 1 : 0;
+
+      console.info('Broadway', 'handleMouseWheel()', dir);
+      sendInput ("s", [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, dir]);
+    }
+  }
+
+  /**
+   * Mouse Movment
+   */
+  function handleMouseMove(id, ev, opts) {
+    updateForEvent(ev);
+    if ( surfaces[id] ) {
+      //console.info('Broadway', 'handleMouseMove()', opts);
+      sendInput ("m", [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState]);
+    }
+  }
+
+  /**
+   * Mouse Down
+   */
+  function handleMouseDown(id, ev, opts) {
+    updateForEvent(ev);
+    var button = ev.button + 1;
+    lastState = lastState | getButtonMask (button);
+
+    if ( surfaces[id] ) {
+      console.info('Broadway', 'handleMouseDown()', opts);
+      sendInput ("b", [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, button]);
+    }
+  }
+
+  /**
+   * Mouse Up
+   */
+  function handleMouseUp(id, ev, opts) {
+    updateForEvent(ev);
+    var button = ev.button + 1;
+    lastState = lastState & ~getButtonMask (button);
+    if ( surfaces[id] ) {
+      console.info('Broadway', 'handleMouseUp()', opts);
+      sendInput ("B", [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, button]);
+    }
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // API
   /////////////////////////////////////////////////////////////////////////////
@@ -643,11 +766,36 @@
   /**
    * Inject keyboard/mouse event
    */
-  window.GTK.inject = function(type, name, value) {
+  window.GTK.inject = function(id, type, ev, opts) {
     if ( !connection ) {
       console.error('Broadway', 'No connections created!');
       return;
     }
+
+    switch ( type ) {
+      case 'mousewheel' :
+        handleMouseWheel(id, ev, opts);
+      break;
+      case 'mousemove' :
+        handleMouseMove(id, ev, opts);
+      break;
+      case 'mousedown' :
+        handleMouseDown(id, ev, opts);
+      break;
+      case 'mouseup' :
+        handleMouseUp(id, ev, opts);
+      break;
+      case 'keypress' :
+        handleKeyPress(id, ev, opts);
+        break;
+      case 'keyup' :
+        handleKeyUp(id, ev, opts);
+        break;
+      case 'keydown' :
+        handleKeyDown(id, ev, opts);
+        break;
+    }
+
   };
 
 })();

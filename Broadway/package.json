@@ -1,0 +1,19 @@
+{
+  "className": "ExtensionBroadway",
+  "type": "extension",
+  "enabled": true,
+  "config": {
+    "ClientKey": "k9pea9k3i1hmcz0"
+  },
+  "build": {
+    "copy" : [
+      "package.json",
+      "broadway.js",
+      "vendor/broadway.js"
+    ]
+  },
+  "sources": [
+    {"type": "javascript", "src": "vendor/broadway.js", "preload": true},
+    {"type": "javascript", "src": "broadway.js"}
+  ]
+}

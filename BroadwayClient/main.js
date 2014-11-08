@@ -37,7 +37,7 @@
    * Main Window Constructor
    */
   var ApplicationBroadwayClientWindow = function(app, metadata) {
-    Window.apply(this, ['ApplicationBroadwayClientWindow', {width: 400, height: 220}, app]);
+    Window.apply(this, ['ApplicationBroadwayClientWindow', {width: 400, height: 250}, app]);
 
     // Set window properties and other stuff here
     this._title = metadata.name;
@@ -55,7 +55,7 @@
     var self = this;
     var supported = OSjs.Core.Broadway ? true : false;
 
-    var connect, proc, stat;
+    var sproc, proc, stat, ws;
 
     // Create window contents (GUI) here
     var lbl = 'Broadway support is ' + (supported ? 'loaded' : 'not loaded');
@@ -63,7 +63,24 @@
     Utils.$addClass(stat.$element, supported ? 'supported' : 'unsupported');
 
     var host = this._addGUIElement(new GUI.Text('TextHost', {value: 'ws://10.0.0.113:8085/socket'}), root);
+    var spawner = this._addGUIElement(new GUI.Text('TextSpawn', {value: 'ws://10.0.0.113:9000'}), root);
     var init = this._addGUIElement(new GUI.Button('ButtonConnect', {label: 'Connect', onClick: function() {
+      if ( ws ) {
+        ws.close();
+        ws = null;
+      }
+
+      ws = new WebSocket(spawner.getValue(), 'broadway-spawner');
+      ws.onerror = function() {
+        alert('Failed to connect to spawner');
+      };
+      ws.onopen = function() {
+        sproc.setDisabled(false);
+      };
+      ws.onclose = function() {
+        sproc.setDisabled(true);
+      };
+
       init.setDisabled(true);
       if ( stat ) {
         stat.setLabel('Connecting...');
@@ -75,7 +92,6 @@
           stat.setLabel(error);
           init.setDisabled(false);
         } else {
-          connect.setDisabled(false);
           proc.setDisabled(false);
           init.setDisabled(true);
           stat.setLabel('Connected...');
@@ -84,14 +100,25 @@
         stat.setLabel('Disconnected...');
         init.setDisabled(false);
         proc.setDisabled(true);
-        connect.setDisabled(true);
+
+        if ( ws ) {
+          ws.close();
+          ws = null;
+        }
       });
     }}), root);
     init.setDisabled(!supported);
 
-    this._addGUIElement(new GUI.Label('LabelStartProcess', {label: 'Start new process:'}), root);
-    proc = this._addGUIElement(new GUI.Text('TextStartProcess', {value: '/usr/bin/gtk3-demo THIS IS NOT IMPLEMENTED YET', disabled: true}), root);
-    connect = this._addGUIElement(new GUI.Button('ButtonStartProcess', {label: 'Launch', disabled: true}), root);
+    start = this._addGUIElement(new GUI.Label('LabelStartProcess', {label: 'Start new process:'}), root);
+    proc = this._addGUIElement(new GUI.Text('TextStartProcess', {value: '/usr/bin/gtk3-demo', disabled: true}), root);
+    sproc = this._addGUIElement(new GUI.Button('ButtonStartProcess', {label: 'Launch', disabled: true, onClick: function() {
+      if ( ws ) {
+        ws.send(JSON.stringify({
+          method: 'launch',
+          argument: proc.getValue()
+        }));
+      }
+    }}), root);
     stat = this._addGUIElement(new GUI.Label('LabelError', {label: ''}), root);
 
     return root;

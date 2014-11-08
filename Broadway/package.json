@@ -8,7 +8,8 @@
     "copy" : [
       "package.json",
       "broadway.js",
-      "extension.js"
+      "extension.js",
+      "api.php"
     ]
   },
   "sources": [

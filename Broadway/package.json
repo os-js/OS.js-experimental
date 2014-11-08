@@ -9,7 +9,7 @@
     "copy" : [
       "package.json",
       "broadway.js",
-      "vendor/broadway.js"
+      "vendor/broadway2.js"
     ]
   },
   "sources": [

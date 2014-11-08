@@ -1549,6 +1549,28 @@
   }
 
 
+  function getRelativeLayer(id, ev, opts) {
+    opts = opts || {};
+
+    var cid = id;
+    if ( ev.target ) {
+      var tmp = ev.target.getAttribute('data-surface-id');
+      if ( tmp ) {
+        cid = parseInt(tmp, 10);
+      }
+    }
+
+    if ( cid !== id ) {
+      var surface = surfaces[cid];
+      if ( surface && surface.canvas ) {
+        opts.mx -= surface.canvas.offsetLeft;
+        opts.my -= surface.canvas.offsetTop;
+      }
+    }
+
+    return cid;
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // WRAPPERS
   /////////////////////////////////////////////////////////////////////////////
@@ -1720,10 +1742,22 @@
     sendConfigureNotify(surface);
 
     console.debug('Broadway', 'onCreateSurface()', id, x, y, w, h, isTemp);
-    if ( !isTemp && globalOpts.onCreateSurface ) {
-      var canvas = globalOpts.onCreateSurface(id, x, y, w, h);
-      if ( canvas ) {
-        canvas.surfaceId = id;
+    if ( isTemp ) {
+      surface.canvas = document.createElement('canvas');
+      surface.canvas.width = w;
+      surface.canvas.height = h;
+      surface.canvas.style.position = 'absolute';
+      surface.canvas.style.left = x + 'px';
+      surface.canvas.style.top = y + 'px';
+      surface.canvas.style.zIndex = '9999999';
+      surface.canvas.style.display = 'none';
+      surface.canvas.setAttribute('data-surface-id', id.toString());
+    } else {
+      if ( globalOpts.onCreateSurface ) {
+        var canvas = globalOpts.onCreateSurface(id, surface);
+        if ( canvas ) {
+          canvas.surfaceId = id;
+        }
       }
     }
   }
@@ -1737,6 +1771,9 @@
 
     if ( surface ) {
       surface.visible = true;
+      if ( surface.canvas ) {
+        surface.canvas.style.display = 'inline';
+      }
 
       console.debug('Broadway', 'onShowSurface()', id);
       if ( globalOpts.onShowSurface ) {
@@ -1754,6 +1791,9 @@
 
     if ( surface ) {
       surface.visible = false;
+      if ( surface.canvas ) {
+        surface.canvas.style.display = 'none';
+      }
 
       console.debug('Broadway', 'onHideSurface()', id);
       if ( globalOpts.onHideSurface ) {
@@ -1775,7 +1815,7 @@
 
       surface.transientParent = parentId;
       if ( globalOpts.onSetTransient ) {
-        globalOpts.onSetTransient(id, parentId);
+        globalOpts.onSetTransient(id, parentId, surface);
       }
     }
   }
@@ -1788,8 +1828,16 @@
     var surface = surfaces[id];
 
     console.debug('Broadway', 'onDeleteSurface()', id);
-    if ( surface && globalOpts.onDeleteSurface ) {
-      globalOpts.onDeleteSurface(id);
+    if ( surface ) {
+      if ( surface.canvas ) {
+        if ( surface.canvas.parentNode ) {
+          surface.canvas.parentNode.removeChild(surface.canvas);
+        }
+      } else {
+        if ( globalOpts.onDeleteSurface ) {
+          globalOpts.onDeleteSurface(id);
+        }
+      }
       delete surfaces[id];
     }
   }
@@ -1800,23 +1848,33 @@
   function onMoveSurface(cmd) {
     var id = cmd.get_16();
     var ops = cmd.get_flags();
-    var has_pos = ops & 1;
+    var surface = surfaces[id];
 
-    var x, y, w, h;
+    if ( !surface ) { return; }
+
+    var has_pos = ops & 1;
     if (has_pos) {
-      x = cmd.get_16s();
-      y = cmd.get_16s();
+      surface.x = cmd.get_16s();
+      surface.y = cmd.get_16s();
     }
 
     var has_size = ops & 2;
     if (has_size) {
-      w = cmd.get_16();
-      h = cmd.get_16();
+      surface.width = cmd.get_16();
+      surface.height = cmd.get_16();
     }
 
-    console.debug('Broadway', 'onMoveSurface()', id, has_pos, x, y, has_size, w, h);
-    if ( globalOpts.onMoveSurface ) {
-      globalOpts.onMoveSurface(id, has_pos, x, y, has_size, w, h);
+    console.debug('Broadway', 'onMoveSurface()', id, has_pos, has_size, surface);
+    if ( surface.isTemp ) {
+      if ( has_pos ) {
+        var par = surfaces[surface.transientParent] || {x: 0, y: 0};
+        surface.canvas.style.left = (surface.x - par.x) + 'px';
+        surface.canvas.style.top = (surface.y - par.y) + 'px';
+      }
+    } else {
+      if ( globalOpts.onMoveSurface ) {
+        globalOpts.onMoveSurface(id, has_pos, has_size, surface);
+      }
     }
   }
 
@@ -1891,8 +1949,8 @@
     if ( surface ) {
       //console.debug('Broadway', 'onFlushSurface()', id);
 
-      var canvas;
-      if ( globalOpts.onFlushSurface ) {
+      var canvas = surface.canvas;
+      if ( !surface.isTemp && globalOpts.onFlushSurface ) {
         canvas = globalOpts.onFlushSurface(id);
       }
 
@@ -2187,9 +2245,10 @@
     if ( surfaces[id] ) {
       var offset = ev.detail ? ev.detail : -ev.wheelDelta;
       var dir = offset > 0 ? 1 : 0;
+      var cid = getRelativeLayer(id, ev, opts);
 
       console.debug('Broadway', 'handleMouseWheel()', dir);
-      sendInput('s', [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, dir]);
+      sendInput('s', [id, cid, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, dir]);
     }
     return true;
   }
@@ -2200,8 +2259,9 @@
   function handleMouseMove(id, ev, opts) {
     updateForEvent(ev);
     if ( surfaces[id] ) {
+      var cid = getRelativeLayer(id, ev, opts);
       //console.debug('Broadway', 'handleMouseMove()', opts);
-      sendInput('m', [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState]);
+      sendInput('m', [id, cid, ev.pageX, ev.pageY, opts.mx, opts.my, lastState]);
     }
     return true;
   }
@@ -2212,12 +2272,12 @@
   function handleMouseDown(id, ev, opts) {
     updateForEvent(ev);
     var button = ev.button + 1;
+    var cid = getRelativeLayer(id, ev, opts);
     lastState = lastState | getButtonMask (button);
 
     if ( surfaces[id] ) {
       console.debug('Broadway', 'handleMouseDown()', opts);
-      sendInput('b', [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, button]);
-      sendInput('e', [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, GDK_CROSSING_NORMAL]);
+      sendInput('b', [id, cid, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, button]);
     }
     return true;
   }
@@ -2228,10 +2288,31 @@
   function handleMouseUp(id, ev, opts) {
     updateForEvent(ev);
     var button = ev.button + 1;
+    var cid = getRelativeLayer(id, ev, opts);
     lastState = lastState & ~getButtonMask (button);
     if ( surfaces[id] ) {
       console.debug('Broadway', 'handleMouseUp()', opts);
-      sendInput('B', [id, id, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, button]);
+      sendInput('B', [id, cid, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, button]);
+    }
+    return true;
+  }
+
+  function handleMouseOver(id, ev, opts) {
+    updateForEvent(ev);
+    var cid = getRelativeLayer(id, ev, opts);
+    if ( surfaces[id] ) {
+      //console.debug('Broadway', 'handleMouseOver()', opts);
+      sendInput('e', [id, cid, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, GDK_CROSSING_NORMAL]);
+    }
+    return true;
+  }
+
+  function handleMouseOut(id, ev, opts) {
+    updateForEvent(ev);
+    var cid = getRelativeLayer(id, ev, opts);
+    if ( surfaces[id] ) {
+      //console.debug('Broadway', 'handleMouseOut()', opts);
+      sendInput('l', [id, cid, ev.pageX, ev.pageY, opts.mx, opts.my, lastState, GDK_CROSSING_NORMAL]);
     }
     return true;
   }
@@ -2364,7 +2445,7 @@
    *   onCreateSurface
    *   onShowSurface
    *   onHideSurface
-   *   onSetTransien
+   *   onSetTransient
    *   onDeleteSurface
    *   onMoveSurface
    *   onFlushSurface
@@ -2440,6 +2521,14 @@
 
       case 'keydown' :
         return handleKeyDown(id, ev, opts);
+        break;
+
+      case 'mouseout' :
+        return handleMouseOver(id, ev, opts);
+        break;
+
+      case 'mouseover' :
+        return handleMouseOver(id, ev, opts);
         break;
 
       default:

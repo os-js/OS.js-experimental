@@ -136,19 +136,25 @@
       });
     }
 
-    this._addEventListener(this._canvas, 'mousemove', function(ev) {
+    this._addEventListener(root, 'mouseover', function(ev) {
+      return inject('mouseover', ev);
+    });
+    this._addEventListener(root, 'mouseout', function(ev) {
+      return inject('mouseout', ev);
+    });
+    this._addEventListener(root, 'mousemove', function(ev) {
       return inject('mousemove', ev);
     });
-    this._addEventListener(this._canvas, 'mousedown', function(ev) {
+    this._addEventListener(root, 'mousedown', function(ev) {
       return inject('mousedown', ev);
     });
-    this._addEventListener(this._canvas, 'mouseup', function(ev) {
+    this._addEventListener(root, 'mouseup', function(ev) {
       return inject('mouseup', ev);
     });
-    this._addEventListener(this._canvas, 'DOMMouseScroll', function(ev) {
+    this._addEventListener(root, 'DOMMouseScroll', function(ev) {
       return inject('mousewheel', ev);
     });
-    this._addEventListener(this._canvas, 'mousewheel', function(ev) {
+    this._addEventListener(root, 'mousewheel', function(ev) {
       return inject('mousewheel', ev);
     });
 
@@ -159,6 +165,12 @@
   BroadwayWindow.prototype.destroy = function() {
     Window.prototype.destroy.apply(this, arguments);
     this._canvas = null;
+  };
+
+  BroadwayWindow.prototype._inited = function() {
+    Window.prototype._inited.apply(this, arguments);
+
+    this._onChange('move', true);
   };
 
   BroadwayWindow.prototype._close = function() {
@@ -230,6 +242,16 @@
         removeNotification();
       },
 
+      onSetTransient: function(id, parentId, surface) {
+        return actionOnWindow(parentId, function(win) {
+          if ( win._canvas && surface.canvas ) {
+            if ( win._canvas.parentNode ) {
+              win._canvas.parentNode.appendChild(surface.canvas);
+            }
+          }
+        });
+      },
+
       onFlushSurface: function(id, q) {
         return actionOnWindow(id, function(win) {
           return win._canvas;
@@ -254,7 +276,7 @@
         });
       },
 
-      onMoveSurface: function(id, has_pos, x, y, has_size, w, h) {
+      onMoveSurface: function(id, has_pos, has_size, surface) {
         return actionOnWindow(id, function(win) {
           /*
           if ( has_pos ) {
@@ -262,14 +284,14 @@
           }
           */
           if ( has_size ) {
-            win._resize(w, h);
+            win._resize(surface.width, surface.height);
           }
         });
       },
 
-      onCreateSurface: function(id, x, y, w, h) {
+      onCreateSurface: function(id, surface) {
         var wm = API.getWMInstance();
-        var win = new BroadwayWindow(id, x, y, w, h);
+        var win = new BroadwayWindow(id, surface.x, surface.y, surface.width, surface.height);
         wm.addWindow(win);
         return win._canvas;
       }

@@ -14,7 +14,7 @@
     ]
   },
   "sources": [
-    {"type": "javascript", "src": "vendor/dropbox.js", "preload": true},
+    {"type": "javascript", "src": "vendor/dropbox.js"},
     {"type": "javascript", "src": "vfs.js"}
   ]
 }

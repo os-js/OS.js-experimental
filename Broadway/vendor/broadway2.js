@@ -2257,9 +2257,18 @@
   /**
    * Connects to Broadway server
    */
-  function connect(hostname) {
+  function connect(hostname, cb, cbclose) {
+    cb = cb || function() {};
+    cbclose = cbclose || function() {};
+
     function createSocket(loc) {
-      return new WebSocket(loc, 'broadway');
+      try {
+        return new WebSocket(loc, 'broadway');
+      } catch ( e ) {
+        cb(e);
+      }
+
+      return null;
     }
 
     function onSocketOpen() {
@@ -2268,6 +2277,8 @@
       if ( globalOpts.onSocketOpen ) {
         globalOpts.onSocketOpen();
       }
+
+      cb(false);
     }
 
     function onSocketClose() {
@@ -2286,6 +2297,12 @@
 
     console.info('Broadway', 'Connecting to', hostname, supports_binary);
 
+    connection.onerror = function() {
+      if ( !connected ) {
+        cb('Connection timeout?');
+      }
+    };
+
     connection.onopen = function() {
       inputSocket = connection;
 
@@ -2296,6 +2313,8 @@
 
       connection = null;
       inputSocket = null;
+
+      cbclose();
     };
     connection.onmessage = function(ev) {
       onSocketMessage(ev.data);
@@ -2351,14 +2370,14 @@
    *   onSocketClose
    *
    */
-  window.GTK.connect = function(host, opts) {
+  window.GTK.connect = function(host, opts, cb, cbclose) {
     if ( connection ) {
       console.error('Broadway', 'Only one connection allowed!');
       return;
     }
 
     globalOpts = opts || {};
-    connect(host);
+    connect(host, cb, cbclose);
   };
 
   /**

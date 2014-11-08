@@ -194,7 +194,7 @@
 
 
   OSjs.Core.Broadway = {};
-  OSjs.Core.Broadway.init = function() {
+  OSjs.Core.Broadway.init = function(cb, cbclose) {
     var metadata = API.getHandlerInstance().getApplicationMetadata("ExtensionBroadway");
     var config = metadata.config;
     var host = config.server;
@@ -266,7 +266,7 @@
         return win._canvas;
       }
 
-    });
+    }, cb, cbclose);
 
   };
 

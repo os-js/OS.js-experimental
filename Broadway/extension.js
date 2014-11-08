@@ -295,7 +295,6 @@
       }
 
     }, cb, cbclose);
-
   };
 
 })(OSjs.Core.Window, OSjs.Utils, OSjs.API);

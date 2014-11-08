@@ -984,16 +984,6 @@
     cb = cb || function() {};
     cbclose = cbclose || function() {};
 
-    function createSocket(loc) {
-      try {
-        return new WebSocket(loc, 'broadway');
-      } catch ( e ) {
-        cb(e);
-      }
-
-      return null;
-    }
-
     function onSocketOpen() {
       connected = true;
 
@@ -1013,7 +1003,7 @@
     }
 
     console.info('Broadway', 'Connecting to', hostname);
-    connection = createSocket(hostname);
+    connection = new WebSocket(hostname, 'broadway');
     connection.binaryType = 'arraybuffer';
 
     connection.onerror = function() {

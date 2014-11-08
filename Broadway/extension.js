@@ -73,6 +73,17 @@
     }
   }
 
+  function actionOnWindow(id, cb) {
+    var wm = API.getWMInstance();
+    if ( wm ) {
+      var win = wm.getWindow('BroadwayWindow' + id);
+      if ( win ) {
+        return cb(win);
+      }
+    }
+    return null;
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // WINDOW
   /////////////////////////////////////////////////////////////////////////////
@@ -85,8 +96,8 @@
 
     this._dimension.w = w;
     this._dimension.h = h;
-    this._position.x  = x;
-    this._position.y  = y;
+    //this._position.x  = Math.max(0, x);
+    //this._position.y  = Math.max(0, y);
     this._title       = 'Broadway Window ' + id.toString();
 
     this._properties.allow_resize     = false;
@@ -176,11 +187,26 @@
     return true;
   };
 
+  BroadwayWindow.prototype._resize = function(w, h) {
+    if ( !Window.prototype._resize.apply(this, [w, h, true]) ) {
+      return false;
+    }
+
+    if ( this._canvas ) {
+      this._canvas.width = w;
+      this._canvas.height = h;
+    }
+
+    return true;
+  };
+
   BroadwayWindow.prototype._onKeyEvent = function(ev, type) {
     window.GTK.inject(this._broadwayId, type, ev);
   };
 
-  BroadwayWindow.prototype._onChange = function(ev) {
+  BroadwayWindow.prototype._onChange = function(ev, byUser) {
+    if ( !byUser ) { return; }
+
     if ( ev === 'move' ) {
       window.GTK.move(this._broadwayId, this._position.x, this._position.y);
     } else if ( ev === 'resize' ) {
@@ -195,8 +221,6 @@
 
   OSjs.Core.Broadway = {};
   OSjs.Core.Broadway.init = function(host, cb, cbclose) {
-    var wm = API.getWMInstance();
-
     window.GTK.connect(host, {
       onSocketOpen: function() {
         createNotification();
@@ -207,57 +231,44 @@
       },
 
       onFlushSurface: function(id, q) {
-        if ( wm ) {
-          var win = wm.getWindow('BroadwayWindow' + id);
-          if ( win ) {
-            return win._canvas;
-          }
-        }
-        return null;
+        return actionOnWindow(id, function(win) {
+          return win._canvas;
+        });
       },
 
       onDeleteSurface: function(id) {
-        if ( wm ) {
-          var win = wm.getWindow('BroadwayWindow' + id);
-          if ( win ) {
-            win._close();
-          }
-        }
+        return actionOnWindow(id, function(win) {
+          return win._close();
+        });
       },
 
       onShowSurface: function(id) {
-        if ( wm ) {
-          var win = wm.getWindow('BroadwayWindow' + id);
-          if ( win ) {
-            win._restore();
-          }
-        }
+        return actionOnWindow(id, function(win) {
+          return win._restore();
+        });
       },
 
       onHideSurface: function(id) {
-        if ( wm ) {
-          var win = wm.getWindow('BroadwayWindow' + id);
-          if ( win ) {
-            win._minimize();
-          }
-        }
+        return actionOnWindow(id, function(win) {
+          return win._minimize();
+        });
       },
 
       onMoveSurface: function(id, has_pos, x, y, has_size, w, h) {
-        if ( wm ) {
-          var win = wm.getWindow('BroadwayWindow' + id);
-          if ( win ) {
-            if ( has_pos ) {
-              win._move(x, y);
-            }
-            if ( has_size ) {
-              win._resize(w, h);
-            }
+        return actionOnWindow(id, function(win) {
+          /*
+          if ( has_pos ) {
+            win._move(x, y);
           }
-        }
+          */
+          if ( has_size ) {
+            win._resize(w, h);
+          }
+        });
       },
 
       onCreateSurface: function(id, x, y, w, h) {
+        var wm = API.getWMInstance();
         var win = new BroadwayWindow(id, x, y, w, h);
         wm.addWindow(win);
         return win._canvas;

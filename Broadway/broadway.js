@@ -1689,7 +1689,11 @@
    */
   function resizeSurface(id, w, h) {
     if ( surfaces[id] ) {
-      // TODO
+      var surface = surfaces[id];
+      surface.width = w;
+      surface.height = h;
+      sendConfigureNotify(surface);
+  //    sendInput('m', [id, 1, surface.x, surface.y, 2, surface.width, surface.height]);
     }
   }
 
@@ -1712,11 +1716,10 @@
     surface.drawQueue = [];
     surface.transientParent = 0;
     surface.visible = false;
-    surface.frame = null;
     surfaces[id] = surface;
     sendConfigureNotify(surface);
 
-    console.debug('Broadway', 'onCreateSurface()', id, x, y, w, h);
+    console.debug('Broadway', 'onCreateSurface()', id, x, y, w, h, isTemp);
     if ( !isTemp && globalOpts.onCreateSurface ) {
       var canvas = globalOpts.onCreateSurface(id, x, y, w, h);
       if ( canvas ) {
@@ -1832,7 +1835,7 @@
     q.img = new Image();
     q.img.src = url;
 
-    console.debug('Broadway', 'onImageData()', url);
+    //console.debug('Broadway', 'onImageData()', url);
     surfaces[q.id].drawQueue.push(q);
 
     if (!q.img.complete) {
@@ -1886,7 +1889,7 @@
     var surface = surfaces[id];
 
     if ( surface ) {
-      console.debug('Broadway', 'onFlushSurface()', id);
+      //console.debug('Broadway', 'onFlushSurface()', id);
 
       var canvas;
       if ( globalOpts.onFlushSurface ) {
@@ -1994,7 +1997,7 @@
       var command = cmd.get_char();
       lastSerial = cmd.get_32();
 
-      console.debug('Broadway', 'handleCommands()', command);
+      //console.debug('Broadway', 'handleCommands()', command);
 
       if ( mapping[command] ) {
         if ( mapping[command](cmd) === false ) {

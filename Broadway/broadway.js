@@ -1868,6 +1868,7 @@
     if ( surface.isTemp ) {
       if ( has_pos ) {
         var par = surfaces[surface.transientParent] || {x: 0, y: 0};
+        console.log([surface.x, par.x], [surface.y, par.y]);
         surface.canvas.style.left = (surface.x - par.x) + 'px';
         surface.canvas.style.top = (surface.y - par.y) + 'px';
       }
@@ -1876,6 +1877,7 @@
         globalOpts.onMoveSurface(id, has_pos, has_size, surface);
       }
     }
+    sendConfigureNotify(surface);
   }
 
   /**
@@ -2317,6 +2319,12 @@
     return true;
   }
 
+  function handleResize(ev) {
+    if ( connected ) {
+      sendInput('d', [window.innerWidth, window.innerHeight]);
+    }
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // API
   /////////////////////////////////////////////////////////////////////////////
@@ -2357,6 +2365,8 @@
 
     function onSocketOpen() {
       connected = true;
+
+      handleResize();
 
       if ( globalOpts.onSocketOpen ) {
         globalOpts.onSocketOpen();
@@ -2495,6 +2505,10 @@
     }
 
     switch ( type ) {
+      case 'resize' :
+        return handleResize();
+      break;
+
       case 'mousewheel' :
         return handleMouseWheel(id, ev, opts);
         break;

@@ -62,7 +62,7 @@
     var stat = this._addGUIElement(new GUI.Label('LabelStatus', {label: lbl}), root);
     Utils.$addClass(stat.$element, supported ? 'supported' : 'unsupported');
 
-    var host = this._addGUIElement(new GUI.Text('TextHost', {value: 'ws://10.0.0.113:8085/socket'}), root);
+    var host = this._addGUIElement(new GUI.Text('TextHost', {value: 'ws://10.0.0.113:8085/socket-bin'}), root);
     var spawner = this._addGUIElement(new GUI.Text('TextSpawn', {value: 'ws://10.0.0.113:9000'}), root);
     var init = this._addGUIElement(new GUI.Button('ButtonConnect', {label: 'Connect', onClick: function() {
       if ( ws ) {

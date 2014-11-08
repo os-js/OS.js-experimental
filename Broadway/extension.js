@@ -30,8 +30,6 @@
 (function(Window, Utils, API) {
   'use strict';
 
-  var _WIN;
-
   function createNotification() {
     var wm = API.getWMInstance();
 
@@ -183,30 +181,30 @@
     return true;
   };
 
-  BroadwayWindow.prototype._focus = function() {
-    if ( !Window.prototype._focus.apply(this, arguments) ) {
-      return false;
-    }
-    _WIN = this;
-    return true;
-  };
-
-  BroadwayWindow.prototype._blur = function() {
-    if ( !Window.prototype._blur.apply(this, arguments) ) {
-      return false;
-    }
-    _WIN = null;
-    return true;
-  };
-
   BroadwayWindow.prototype._resize = function(w, h) {
     if ( !Window.prototype._resize.apply(this, [w, h, true]) ) {
       return false;
     }
 
+    function resizeCanvas(canvas, w, h) {
+      var tmpCanvas = canvas.ownerDocument.createElement("canvas");
+      tmpCanvas.width = canvas.width;
+      tmpCanvas.height = canvas.height;
+      var tmpContext = tmpCanvas.getContext("2d");
+      tmpContext.globalCompositeOperation = "copy";
+      tmpContext.drawImage(canvas, 0, 0, tmpCanvas.width, tmpCanvas.height);
+
+      canvas.width = w;
+      canvas.height = h;
+
+      var context = canvas.getContext("2d");
+
+      context.globalCompositeOperation = "copy";
+      context.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height);
+    }
+
     if ( this._canvas ) {
-      this._canvas.width = w;
-      this._canvas.height = h;
+      resizeCanvas(this._canvas, w, h);
     }
 
     return true;

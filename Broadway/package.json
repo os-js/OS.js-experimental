@@ -3,17 +3,16 @@
   "type": "extension",
   "enabled": true,
   "config": {
-    "server": "ws://10.0.0.113:8085/socket"
   },
   "build": {
     "copy" : [
       "package.json",
       "broadway.js",
-      "vendor/broadway2.js"
+      "extension.js"
     ]
   },
   "sources": [
-    {"type": "javascript", "src": "vendor/broadway2.js"},
-    {"type": "javascript", "src": "broadway.js"}
+    {"type": "javascript", "src": "broadway.js"},
+    {"type": "javascript", "src": "extension.js"}
   ]
 }

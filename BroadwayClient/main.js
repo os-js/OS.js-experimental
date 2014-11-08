@@ -37,7 +37,7 @@
    * Main Window Constructor
    */
   var ApplicationBroadwayClientWindow = function(app, metadata) {
-    Window.apply(this, ['ApplicationBroadwayClientWindow', {width: 400, height: 200}, app]);
+    Window.apply(this, ['ApplicationBroadwayClientWindow', {width: 400, height: 220}, app]);
 
     // Set window properties and other stuff here
     this._title = metadata.name;
@@ -53,68 +53,46 @@
   ApplicationBroadwayClientWindow.prototype.init = function(wmRef, app) {
     var root = Window.prototype.init.apply(this, arguments);
     var self = this;
+    var supported = OSjs.Core.Broadway ? true : false;
 
-    var lbl, btn, txt, err;
+    var connect, proc, stat;
 
     // Create window contents (GUI) here
-    var supported = OSjs.Core.Broadway ? true : false;
-    lbl = 'Broadway support is ' + (supported ? 'loaded' : 'not loaded');
-
+    var lbl = 'Broadway support is ' + (supported ? 'loaded' : 'not loaded');
     var stat = this._addGUIElement(new GUI.Label('LabelStatus', {label: lbl}), root);
     Utils.$addClass(stat.$element, supported ? 'supported' : 'unsupported');
 
+    var host = this._addGUIElement(new GUI.Text('TextHost', {value: 'ws://10.0.0.113:8085/socket'}), root);
     var init = this._addGUIElement(new GUI.Button('ButtonConnect', {label: 'Connect', onClick: function() {
       init.setDisabled(true);
-      if ( err ) {
-        err.setLabel('Connecting...');
+      if ( stat ) {
+        stat.setLabel('Connecting...');
       }
 
-      OSjs.Core.Broadway.init(function(error) {
+      OSjs.Core.Broadway.init(host.getValue(), function(error) {
         if ( error ) {
           console.warn('BroadwayClient', error);
-
-          if ( err ) {
-            err.setLabel(error);
-          }
-          if ( init ) {
-            init.setDisabled(false);
-          }
+          stat.setLabel(error);
+          init.setDisabled(false);
         } else {
-          if ( btn ) {
-            btn.setDisabled(false);
-          }
-          if ( txt ) {
-            txt.setDisabled(false);
-          }
-          if ( init ) {
-            init.setDisabled(true);
-          }
-          if ( err ) {
-            err.setLabel('Connected...');
-          }
+          connect.setDisabled(false);
+          proc.setDisabled(false);
+          init.setDisabled(true);
+          stat.setLabel('Connected...');
         }
       }, function() {
-        if ( err ) {
-          err.setLabel('Disconnected...');
-        }
-        if ( init ) {
-          init.setDisabled(false);
-        }
-        if ( txt ) {
-          txt.setDisabled(true);
-        }
-        if ( btn ) {
-          btn.setDisabled(true);
-        }
+        stat.setLabel('Disconnected...');
+        init.setDisabled(false);
+        proc.setDisabled(true);
+        connect.setDisabled(true);
       });
     }}), root);
     init.setDisabled(!supported);
 
-    lbl = 'Start new process:';
-    this._addGUIElement(new GUI.Label('LabelStartProcess', {label: lbl}), root);
-    txt = this._addGUIElement(new GUI.Text('TextStartProcess', {value: '/usr/bin/gtk3-demo THIS IS NOT IMPLEMENTED YET', disabled: true}), root);
-    btn = this._addGUIElement(new GUI.Button('ButtonStartProcess', {label: 'Launch', disabled: true}), root);
-    err = this._addGUIElement(new GUI.Label('LabelError', {label: ''}), root);
+    this._addGUIElement(new GUI.Label('LabelStartProcess', {label: 'Start new process:'}), root);
+    proc = this._addGUIElement(new GUI.Text('TextStartProcess', {value: '/usr/bin/gtk3-demo THIS IS NOT IMPLEMENTED YET', disabled: true}), root);
+    connect = this._addGUIElement(new GUI.Button('ButtonStartProcess', {label: 'Launch', disabled: true}), root);
+    stat = this._addGUIElement(new GUI.Label('LabelError', {label: ''}), root);
 
     return root;
   };

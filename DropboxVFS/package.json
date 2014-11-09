@@ -1,7 +1,7 @@
 {
   "className": "ExtensionDropboxVFS",
   "type": "extension",
-  "enabled": false,
+  "enabled": true,
   "config": {
     "ClientKey": "k9pea9k3i1hmcz0"
   },

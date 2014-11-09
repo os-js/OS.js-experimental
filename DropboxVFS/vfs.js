@@ -108,10 +108,15 @@
       callback(error, true);
     });
   };
-  DropboxVFS.prototype.read = function(item, callback) {
-    console.info('DropboxVFS::read()', item);
+  DropboxVFS.prototype.read = function(item, callback, options) {
+    options = options || {};
+    if ( options.arraybuffer ) {
+      options.arrayBuffer = true;
+    }
+
+    console.info('DropboxVFS::read()', item, options);
     var path = OSjs.VFS.getRelativeURL(item.path);
-    this.client.readFile(path, function(error, entries) {
+    this.client.readFile(path, options, function(error, entries) {
       callback(error, (error ? false : (entries instanceof Array ? entries.join('\n') : entries)));
     });
   };
@@ -159,9 +164,26 @@
   DropboxVFS.prototype.url = function(item, callback) {
     console.info('DropboxVFS::url()', item);
     var path = (typeof item === 'string') ? OSjs.VFS.getRelativeURL(item) : OSjs.VFS.getRelativeURL(item.path);
-    this.client.makeUrl(path, function(error, url) {
-      callback(error, url);
+    this.client.makeUrl(path, {downloadHack: true}, function(error, url) {
+      callback(error, url ? url.url : false);
     });
+  };
+  DropboxVFS.prototype.upload = function(file, dest, callback) {
+    var ndest = dest.replace(OSjs.VFS.Modules.Dropbox.match, '');
+    if ( !ndest.match(/\/$/) ) {
+      ndest += '/';
+    }
+
+    console.info('DropboxVFS::upload()', file, dest, ndest);
+
+    var item = new OSjs.VFS.File({
+      filename: file.name,
+      path: ndest + file.name,
+      mime: file.type,
+      size: file.size
+    });
+
+    this.write(item, file, callback);
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -187,7 +209,7 @@
     };
   })();
 
-  function makeRequest(name, args, callback) {
+  function makeRequest(name, args, callback, options) {
     args = args || [];
     callback = callback || function() {};
 
@@ -198,6 +220,7 @@
       }
       var fargs = args;
       fargs.push(callback);
+      fargs.push(options);
       instance[name].apply(instance, fargs);
     });
   }

@@ -27,23 +27,56 @@
  * @author  Anders Evenrud <andersevenrud@gmail.com>
  * @licence Simplified BSD License
  */
-(function(Window, Utils, API) {
+(function(Window, Utils, API, GUI) {
   'use strict';
+
+  var _isConnected = false;
+  var _connWindow = null;
+
+  function createConnectionWindow() {
+    if ( _connWindow ) { return; }
+
+    var wm = API.getWMInstance();
+    if ( wm ) {
+      _connWindow = new BroadwayConnectionWindow();
+      wm.addWindow(_connWindow, true);
+    }
+  }
+
+  function destroyConnectionWindow() {
+    if ( _connWindow ) {
+      _connWindow._close();
+      _connWindow = null;
+    }
+  }
 
   function createNotification() {
     var wm = API.getWMInstance();
 
     function displayMenu(ev) {
-      var pos = {x: ev.clientX, y: ev.clientY};
-      OSjs.GUI.createMenu([{
-        title: 'Disconnect from Broadway server',
-        onClick: function() {
-          window.GTK.disconnect();
-        }
-      }], pos);
+      var menuItems = [];
+      if ( _isConnected ) {
+        menuItems.push({
+          title: 'Disconnect from Broadway server',
+          onClick: function() {
+            window.GTK.disconnect();
+          }
+        });
+      } else {
+        menuItems.push({
+          title: 'Connect Broadway server',
+          onClick: function() {
+            createConnectionWindow();
+          }
+        });
+      }
+
+      OSjs.GUI.createMenu(menuItems, {x: ev.clientX, y: ev.clientY});
     }
 
     if ( wm ) {
+      removeNotification();
+
       wm.createNotificationIcon('BroadwayService', {
         onContextMenu: function(ev) {
           displayMenu(ev);
@@ -83,7 +116,102 @@
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // WINDOW
+  // CLIENT WINDOW
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Main Window Constructor
+   */
+  var BroadwayConnectionWindow = function() {
+    Window.apply(this, ['BroadwayConnectionWindow', {width: 400, height: 250}]);
+
+    // Set window properties and other stuff here
+    this._title = 'Broadway Client';
+    //this._icon  = metadata.icon;
+
+    this._properties.allow_maximize = false;
+    this._properties.allow_resize   = false;
+    this._properties.gravity        = 'center';
+  };
+
+  BroadwayConnectionWindow.prototype = Object.create(Window.prototype);
+
+  BroadwayConnectionWindow.prototype.init = function(wmRef, app) {
+    var root = Window.prototype.init.apply(this, arguments);
+    var self = this;
+    var supported = OSjs.Core.Broadway ? true : false;
+
+    var sproc, proc, stat, ws, start;
+
+    // Create window contents (GUI) here
+    var lbl = 'Broadway support is ' + (supported ? 'loaded' : 'not loaded');
+    var stat = this._addGUIElement(new GUI.Label('LabelStatus', {label: lbl}), root);
+    Utils.$addClass(stat.$element, supported ? 'supported' : 'unsupported');
+
+    var host = this._addGUIElement(new GUI.Text('TextHost', {value: 'ws://10.0.0.113:8085/socket-bin'}), root);
+    var spawner = this._addGUIElement(new GUI.Text('TextSpawn', {value: 'ws://10.0.0.113:9000'}), root);
+    var init = this._addGUIElement(new GUI.Button('ButtonConnect', {label: 'Connect', onClick: function() {
+      if ( ws ) {
+        ws.close();
+        ws = null;
+      }
+
+      ws = new WebSocket(spawner.getValue(), 'broadway-spawner');
+      ws.onerror = function() {
+        alert('Failed to connect to spawner');
+      };
+      ws.onopen = function() {
+        sproc.setDisabled(false);
+      };
+      ws.onclose = function() {
+        sproc.setDisabled(true);
+      };
+
+      init.setDisabled(true);
+      if ( stat ) {
+        stat.setLabel('Connecting...');
+      }
+
+      OSjs.Core.Broadway.init(host.getValue(), function(error) {
+        if ( error ) {
+          console.warn('BroadwayClient', error);
+          stat.setLabel(error);
+          init.setDisabled(false);
+        } else {
+          proc.setDisabled(false);
+          init.setDisabled(true);
+          stat.setLabel('Connected...');
+        }
+      }, function() {
+        stat.setLabel('Disconnected...');
+        init.setDisabled(false);
+        proc.setDisabled(true);
+
+        if ( ws ) {
+          ws.close();
+          ws = null;
+        }
+      });
+    }}), root);
+    init.setDisabled(!supported);
+
+    start = this._addGUIElement(new GUI.Label('LabelStartProcess', {label: 'Start new process:'}), root);
+    proc = this._addGUIElement(new GUI.Text('TextStartProcess', {value: '/usr/bin/gtk3-demo', disabled: true}), root);
+    sproc = this._addGUIElement(new GUI.Button('ButtonStartProcess', {label: 'Launch', disabled: true, onClick: function() {
+      if ( ws ) {
+        ws.send(JSON.stringify({
+          method: 'launch',
+          argument: proc.getValue()
+        }));
+      }
+    }}), root);
+    stat = this._addGUIElement(new GUI.Label('LabelError', {label: ''}), root);
+
+    return root;
+  };
+
+  /////////////////////////////////////////////////////////////////////////////
+  // BROADWAY WINDOW
   /////////////////////////////////////////////////////////////////////////////
 
   /**
@@ -225,19 +353,28 @@
   };
 
   /////////////////////////////////////////////////////////////////////////////
-  // API
+  // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
 
+  OSjs.Core.addHook('onSessionLoaded', function() {
+    createNotification();
+  });
+  OSjs.Core.addHook('onLogout', function() {
+    destroyNotification();
+    destroyConnectionWindow();
+  });
 
   OSjs.Core.Broadway = {};
   OSjs.Core.Broadway.init = function(host, cb, cbclose) {
     window.GTK.connect(host, {
       onSocketOpen: function() {
+        _isConnected = true;
         createNotification();
       },
 
       onSocketClose: function() {
-        removeNotification();
+        _isConnected = false;
+        createNotification();
       },
 
       onSetTransient: function(id, parentId, surface) {
@@ -297,4 +434,4 @@
     }, cb, cbclose);
   };
 
-})(OSjs.Core.Window, OSjs.Utils, OSjs.API);
+})(OSjs.Core.Window, OSjs.Utils, OSjs.API, OSjs.GUI);

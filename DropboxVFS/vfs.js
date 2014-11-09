@@ -230,6 +230,7 @@
   /////////////////////////////////////////////////////////////////////////////
 
   OSjs.VFS.Modules.Dropbox = OSjs.VFS.Modules.Dropbox || {
+    arrayBuffer: true,
     description: 'Dropbox',
     visible: true,
     enabled: function() {

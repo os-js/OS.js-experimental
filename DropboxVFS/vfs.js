@@ -110,9 +110,6 @@
   };
   DropboxVFS.prototype.read = function(item, callback, options) {
     options = options || {};
-    if ( options.arraybuffer ) {
-      options.arrayBuffer = true;
-    }
 
     console.info('DropboxVFS::read()', item, options);
     var path = OSjs.VFS.getRelativeURL(item.path);

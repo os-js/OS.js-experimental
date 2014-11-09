@@ -64,7 +64,7 @@
         });
       } else {
         menuItems.push({
-          title: 'Connect Broadway server',
+          title: 'Connect to Broadway server',
           onClick: function() {
             createConnectionWindow();
           }
@@ -151,6 +151,8 @@
     var host = this._addGUIElement(new GUI.Text('TextHost', {value: 'ws://10.0.0.113:8085/socket-bin'}), root);
     var spawner = this._addGUIElement(new GUI.Text('TextSpawn', {value: 'ws://10.0.0.113:9000'}), root);
     var init = this._addGUIElement(new GUI.Button('ButtonConnect', {label: 'Connect', onClick: function() {
+      if ( self._destroyed ) { return; }
+
       if ( ws ) {
         ws.close();
         ws = null;
@@ -161,9 +163,11 @@
         alert('Failed to connect to spawner');
       };
       ws.onopen = function() {
+        if ( self._destroyed ) { return; }
         sproc.setDisabled(false);
       };
       ws.onclose = function() {
+        if ( self._destroyed ) { return; }
         sproc.setDisabled(true);
       };
 
@@ -173,6 +177,8 @@
       }
 
       OSjs.Core.Broadway.init(host.getValue(), function(error) {
+        if ( self._destroyed ) { return; }
+
         if ( error ) {
           console.warn('BroadwayClient', error);
           stat.setLabel(error);
@@ -183,6 +189,8 @@
           stat.setLabel('Connected...');
         }
       }, function() {
+        if ( self._destroyed ) { return; }
+
         stat.setLabel('Disconnected...');
         init.setDisabled(false);
         proc.setDisabled(true);
@@ -198,6 +206,7 @@
     start = this._addGUIElement(new GUI.Label('LabelStartProcess', {label: 'Start new process:'}), root);
     proc = this._addGUIElement(new GUI.Text('TextStartProcess', {value: '/usr/bin/gtk3-demo', disabled: true}), root);
     sproc = this._addGUIElement(new GUI.Button('ButtonStartProcess', {label: 'Launch', disabled: true, onClick: function() {
+      if ( self._destroyed ) { return; }
       if ( ws ) {
         ws.send(JSON.stringify({
           method: 'launch',
@@ -208,6 +217,11 @@
     stat = this._addGUIElement(new GUI.Label('LabelError', {label: ''}), root);
 
     return root;
+  };
+
+  BroadwayConnectionWindow.prototype.destroy = function() {
+    _connWindow = null;
+    return Window.prototype.destroy.apply(this, arguments);
   };
 
   /////////////////////////////////////////////////////////////////////////////

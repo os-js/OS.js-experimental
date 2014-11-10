@@ -374,7 +374,7 @@
     createNotification();
   });
   OSjs.Core.addHook('onLogout', function() {
-    destroyNotification();
+    removeNotification();
     destroyConnectionWindow();
   });
 

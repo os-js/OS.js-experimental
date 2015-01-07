@@ -71,7 +71,7 @@
         });
       }
 
-      OSjs.GUI.createMenu(menuItems, {x: ev.clientX, y: ev.clientY});
+      OSjs.API.createMenu(menuItems, {x: ev.clientX, y: ev.clientY});
     }
 
     if ( wm ) {

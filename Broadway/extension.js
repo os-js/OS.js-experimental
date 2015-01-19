@@ -370,10 +370,10 @@
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
 
-  OSjs.Core.addHook('onSessionLoaded', function() {
+  OSjs.Session.addHook('onSessionLoaded', function() {
     createNotification();
   });
-  OSjs.Core.addHook('onLogout', function() {
+  OSjs.Session.addHook('onLogout', function() {
     removeNotification();
     destroyConnectionWindow();
   });

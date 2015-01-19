@@ -36,7 +36,7 @@
   function createConnectionWindow() {
     if ( _connWindow ) { return; }
 
-    var wm = API.getWMInstance();
+    var wm = OSjs.Core.getWindowManager();
     if ( wm ) {
       _connWindow = new BroadwayConnectionWindow();
       wm.addWindow(_connWindow, true);
@@ -51,7 +51,7 @@
   }
 
   function createNotification() {
-    var wm = API.getWMInstance();
+    var wm = OSjs.Core.getWindowManager();
 
     function displayMenu(ev) {
       var menuItems = [];
@@ -98,14 +98,14 @@
   }
 
   function removeNotification() {
-    var wm = API.getWMInstance();
+    var wm = OSjs.Core.getWindowManager();
     if ( wm ) {
       wm.removeNotificationIcon('BroadwayService');
     }
   }
 
   function actionOnWindow(id, cb) {
-    var wm = API.getWMInstance();
+    var wm = OSjs.Core.getWindowManager();
     if ( wm ) {
       var win = wm.getWindow('BroadwayWindow' + id);
       if ( win ) {
@@ -439,7 +439,7 @@
       },
 
       onCreateSurface: function(id, surface) {
-        var wm = API.getWMInstance();
+        var wm = OSjs.Core.getWindowManager();
         var win = new BroadwayWindow(id, surface.x, surface.y, surface.width, surface.height);
         wm.addWindow(win);
         return win._canvas;

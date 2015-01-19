@@ -100,7 +100,7 @@
 
     this._addGUIElement(new OSjs.GUI.Button('TesterNotification', {label: 'Test Desktop Notification', onClick: function() {
       self._appRef._call('TestMethod', {'Argument': 'Some Value'}, function(response) {
-        var wm = OSjs.API.getWMInstance();
+        var wm = OSjs.Core.getWindowManager();
         if ( wm ) {
           wm.notification({icon: "categories/applications-system.png", title: "GUITest", message: "Notification"});
         }
@@ -146,7 +146,7 @@
       var opts = [];
       switch ( name ) {
         case 'ApplicationChooser' :
-          var apps = Object.keys(OSjs.API.getHandlerInstance().getApplicationsMetadata());
+          var apps = Object.keys(OSjs.Core.getHandler().getApplicationsMetadata());
           var fname = OSjs.API.getDefaultPath() + '/test.txt';
           var file  = new OSjs.VFS.File(fname, 'text/plain');
           opts = [file, apps, function(btn, val, def) {

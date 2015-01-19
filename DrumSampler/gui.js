@@ -27,7 +27,7 @@
  * @author  Anders Evenrud <andersevenrud@gmail.com>
  * @licence Simplified BSD License
  */
-(function(Application, Window, GUI, Dialogs) {
+(function(Application, Window, GUI, Dialogs, GUIElement) {
   'use strict';
 
   function ToggleButton(name, opts) {
@@ -38,13 +38,13 @@
     this.$click   = null;
     this.cbClick  = opts.onClick || function() {};
 
-    GUI.GUIElement.apply(this, [name]);
+    GUIElement.apply(this, [name]);
   };
 
-  ToggleButton.prototype = Object.create(GUI.GUIElement.prototype);
+  ToggleButton.prototype = Object.create(GUIElement.prototype);
 
   ToggleButton.prototype.init = function() {
-    var el = GUI.GUIElement.prototype.init.apply(this, ['GUIToggleButton']);
+    var el = GUIElement.prototype.init.apply(this, ['GUIToggleButton']);
 
     this.$inner = document.createElement('div');
     this.$inner.className = 'Inner';
@@ -100,4 +100,4 @@
   OSjs.Applications.ApplicationDrumSampler = OSjs.Applications.ApplicationDrumSampler || {};
   OSjs.Applications.ApplicationDrumSampler.ToggleButton = ToggleButton;
 
-})(OSjs.Core.Application, OSjs.Core.Window, OSjs.GUI, OSjs.Dialogs);
+})(OSjs.Core.Application, OSjs.Core.Window, OSjs.GUI, OSjs.Dialogs, OSjs.Core.GUIElement);

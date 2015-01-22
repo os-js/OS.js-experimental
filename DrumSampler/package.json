@@ -1,6 +1,6 @@
 {
   "className":  "ApplicationDrumSampler",
-  "name":       "DrumSampler",
+  "name":       "Drum Sampler",
   "mime":       ["osjs\\/dbeat"],
   "icon":       "devices/speaker.png",
   "category":   "multimedia",

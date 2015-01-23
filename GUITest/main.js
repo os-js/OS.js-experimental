@@ -85,7 +85,7 @@
     var el = tabs.addTab("DnD", {title: "DnD"});
     this.$dnd_container = document.createElement('div');
     this.$dnd_container.className = 'DnDContainer';
-    this.$dnd_container.appendChild(document.createTextNode("Drag and drop and element into this window to view results.\n\n"));
+    this.$dnd_container.appendChild(document.createTextNode("Drag and drop an element into this window to view results.\n\n"));
     el.appendChild(this.$dnd_container);
   };
 

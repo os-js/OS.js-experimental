@@ -1,0 +1,26 @@
+{
+  "className":  "ApplicationThreejs",
+  "name":       "Threejs",
+  "mime":       null,
+  "icon":       "apps/kscreensaver.png",
+  "category":   "graphics",
+  "enabled":    true,
+  "splash":     true,
+  "compability":["webgl"],
+  "build":      {
+    "copy": [
+      "metadata.json",
+      "main.js",
+      "main.css"
+    ]
+  },
+  "preload":    [
+    {"src": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r74/three.min.js", "type": "javascript"},
+    {"src": "https://cdnjs.cloudflare.com/ajax/libs/stats.js/r14/Stats.min.js", "type": "javascript"},
+    {"src": "main.js", "type": "javascript"},
+    {"src": "main.css", "type": "stylesheet"}
+  ]
+}
+
+
+

@@ -1,0 +1,6 @@
+{
+  "name": "experimental",
+  "description": "OS.js Experimental Packages",
+  "maintainer": "Anders Evenrud <andersevenrud@gmail.com>",
+  "url": "https://github.com/os-js/OS.js-experimental"
+}

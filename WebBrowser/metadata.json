@@ -1,0 +1,16 @@
+{
+  "className":  "ApplicationWebBrowser",
+  "name":       "Web Browser",
+  "mime":       [
+    "text\\/html"
+  ],
+  "category":   "network",
+  "icon":       "apps/web-browser.png",
+  "preload":    [
+    {"src": "main.js", "type": "javascript"},
+    {"src": "main.css", "type": "stylesheet"}
+  ]
+}
+
+
+

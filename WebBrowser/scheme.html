@@ -1,0 +1,42 @@
+<application-window data-id="WebBrowserWindow">
+
+  <gui-vbox>
+    <!-- MENU BAR -->
+    <gui-vbox-container data-grow="0" data-shrink="1" data-basis="auto">
+      <gui-menu-bar>
+
+        <gui-menu-bar-entry data-label="LBL_FILE">
+          <gui-menu data-id="SubmenuFile">
+            <gui-menu-entry data-id="MenuClose" data-label="LBL_CLOSE"></gui-menu-entry>
+          </gui-menu>
+        </gui-menu-bar-entry>
+
+      </gui-menu-bar>
+    </gui-vbox-container>
+
+    <!-- TOOLBAR -->
+    <gui-vbox-container data-grow="0" data-shrink="1" data-basis="auto" data-id="ToolbarContainer">
+      <gui-toolbar data-id="TopToolbar" class="gui-flex">
+
+        <gui-button data-icon="stock://16x16/actions/back.png" data-id="BtnBack" data-disabled="true" />
+        <gui-button data-icon="stock://16x16/actions/next.png" data-id="BtnNext" data-disabled="true" />
+        <gui-button data-icon="stock://16x16/actions/stop.png" data-id="BtnStop" data-disabled="true" />
+        <gui-button data-icon="stock://16x16/actions/reload.png" data-id="BtnRefresh" data-disabled="true" />
+        <gui-text class="gui-flex-grow" data-id="InpLocation" data-placeholder="location:///path" />
+
+      </gui-toolbar>
+    </gui-vbox-container>
+
+    <!-- CONTENT -->
+    <gui-vbox-container data-grow="1" data-shrink="0" data-basis="auto" data-fill="true">
+      <gui-iframe data-id="Browser" />
+    </gui-vbox-container>
+
+
+    <!-- STATUSBAR -->
+    <gui-vbox-container data-grow="0" data-shrink="1" data-basis="auto">
+      <gui-statusbar data-id="Statusbar"></gui-statusbar>
+    </gui-vbox-container>
+  </gui-vbox>
+
+</application-window>

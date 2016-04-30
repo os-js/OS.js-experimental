@@ -58,7 +58,13 @@
     this.camera.position.z = 1000;
     this.scene.add(this.camera);
 
-    this.renderer = new THREE.WebGLRenderer( {antialias:true} );
+    try {
+      this.renderer = new THREE.WebGLRenderer( {antialias:true} );
+    } catch ( e ) {
+      OSjs.API.error('Threejs', 'An error occured while creating renderer', 'WebGLRenderer failed to initialize', e);
+      return;
+    }
+
     this.renderer.setClearColor( 0x000040 );
     this.renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 

@@ -305,13 +305,13 @@
       }
     };
     this.scene = new MyScene(root);
-    this._addHook('resized', _resize);
-    this._addHook('maximize', _resize);
-    this._addHook('restore', _resize);
-    this._addHook('minimize', _pause);
-    this._addHook('restore', _resume);
-    this._addHook('focus',   _resume);
-    this._addHook('blur',     _pause);
+    this._on('resized', _resize);
+    this._on('maximize', _resize);
+    this._on('restore', _resize);
+    this._on('minimize', _pause);
+    this._on('restore', _resume);
+    this._on('focus',   _resume);
+    this._on('blur',     _pause);
 
     return root;
   };

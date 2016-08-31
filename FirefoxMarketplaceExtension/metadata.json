@@ -1,0 +1,14 @@
+{
+  "className": "FirefoxMarketplaceExtension",
+  "type": "extension",
+  "enabled": false,
+  "build": {
+    "copy" : [
+      "metadata.json",
+      "extension.js"
+    ]
+  },
+  "sources": [
+    {"type": "javascript", "src": "extension.js"}
+  ]
+}

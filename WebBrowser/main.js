@@ -81,7 +81,7 @@
 
     var self = this;
     var path = this._app._getArgument('file');
-    var url  = this._app._getArgument('url') || 'http://os.js.org';
+    var url  = this._app._getArgument('url') || 'http://os-js.org';
 
     if ( path ) {
       VFS.url(path, function(err, res) {

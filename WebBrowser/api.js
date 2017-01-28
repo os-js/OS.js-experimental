@@ -30,7 +30,7 @@
 (function() {
   'use strict';
 
-  // See http://os.js.org/doc/tutorials/application-with-server-api.html
+  // See http://os-js.org/doc/tutorials/application-with-server-api.html
   module.exports = {
   };
 

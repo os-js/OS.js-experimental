@@ -51,10 +51,10 @@
     var self = this;
 
     // Load and set up scheme (GUI) here
-    scheme.render(this, 'WebBrowserWindow', root);
+    this._render('WebBrowserWindow');
 
-    var iframe = this._find('Browser').$element;
     /*
+    var iframe = this._find('Browser').$element;
     iframe.addEventListener('load', function() {
       console.warn('xxx');
     });
@@ -114,13 +114,10 @@
     return Application.prototype.destroy.apply(this, arguments);
   };
 
-  ApplicationWebBrowser.prototype.init = function(settings, metadata) {
+  ApplicationWebBrowser.prototype.init = function(settings, metadata, scheme) {
     Application.prototype.init.apply(this, arguments);
 
-    var self = this;
-    this._loadScheme('./scheme.html', function(scheme) {
-      self._addWindow(new ApplicationWebBrowserWindow(self, metadata, scheme));
-    });
+    this._addWindow(new ApplicationWebBrowserWindow(this, metadata, scheme));
   };
 
   /////////////////////////////////////////////////////////////////////////////

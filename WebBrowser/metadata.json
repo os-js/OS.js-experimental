@@ -7,6 +7,7 @@
   "category":   "network",
   "icon":       "apps/web-browser.png",
   "preload":    [
+    {"src": "scheme.html", "type": "scheme"},
     {"src": "main.js", "type": "javascript"},
     {"src": "main.css", "type": "stylesheet"}
   ]

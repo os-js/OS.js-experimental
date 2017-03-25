@@ -2,7 +2,7 @@
   "className":  "ApplicationThreejs",
   "name":       "Threejs",
   "mime":       null,
-  "icon":       "apps/kscreensaver.png",
+  "icon":       "apps/preferences-desktop-screensaver.png",
   "category":   "graphics",
   "enabled":    true,
   "splash":     true,

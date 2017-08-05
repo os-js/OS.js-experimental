@@ -27,31 +27,27 @@
  * @author  Anders Evenrud <andersevenrud@gmail.com>
  * @licence Simplified BSD License
  */
-(function(Application, Window, Utils, API, VFS, GUI) {
-  'use strict';
+const Application = OSjs.require('core/application');
+const Window = OSjs.require('core/window');
+const Config = OSjs.require('core/config');
+const VFS = OSjs.require('vfs/fs');
 
-  /////////////////////////////////////////////////////////////////////////////
-  // WINDOWS
-  /////////////////////////////////////////////////////////////////////////////
+class ApplicationWebBrowserWindow extends Window {
 
-  function ApplicationWebBrowserWindow(app, metadata, scheme) {
-    Window.apply(this, ['ApplicationWebBrowserWindow', {
+  constructor(app, metadata) {
+    super('ApplicationWebBrowserWindow', {
       icon: metadata.icon,
       title: metadata.name,
       width: 600,
       height: 400
-    }, app, scheme]);
+    }, app);
   }
 
-  ApplicationWebBrowserWindow.prototype = Object.create(Window.prototype);
-  ApplicationWebBrowserWindow.constructor = Window.prototype;
-
-  ApplicationWebBrowserWindow.prototype.init = function(wmRef, app, scheme) {
-    var root = Window.prototype.init.apply(this, arguments);
-    var self = this;
+  init(wmRef, app) {
+    const root = super.init(...arguments);
 
     // Load and set up scheme (GUI) here
-    this._render('WebBrowserWindow');
+    this._render('WebBrowserWindow', require('osjs-scheme-loader!scheme.html'));
 
     /*
     var iframe = this._find('Browser').$element;
@@ -61,71 +57,50 @@
     */
 
     var inp = this._find('InpLocation');
-    inp.on('enter', function() {
-      self.setLocation(inp.get('value'));
+    inp.on('enter', () => {
+      this.setLocation(inp.get('value'));
     });
 
-    if ( (['nw', 'electron', 'x11']).indexOf(API.getConfig('Connection.Type')) === -1 ) {
+    if ( (['nw', 'electron', 'x11']).indexOf(Config.getConfig('Connection.Type')) === -1 ) {
       this._setWarning('Web Browser does not work in a browser deployed environment (Same-Origin-Policy / CORS)');
     }
 
     return root;
-  };
+  }
 
-  ApplicationWebBrowserWindow.prototype.destroy = function() {
-    Window.prototype.destroy.apply(this, arguments);
-  };
+  _inited() {
+    super._inited(...arguments);
 
-  ApplicationWebBrowserWindow.prototype._inited = function() {
-    Window.prototype._inited.apply(this, arguments);
-
-    var self = this;
     var path = this._app._getArgument('file');
     var url  = this._app._getArgument('url') || 'http://os-js.org';
 
     if ( path ) {
-      VFS.url(path, function(err, res) {
-        self.setLocation(res);
-      });
+      VFS.url(path).then((r) => this.setLocation(r));
     } else {
       this.setLocation(url);
     }
 
-  };
+  }
 
-  ApplicationWebBrowserWindow.prototype.setLocation = function(s) {
+  setLocation(s) {
     this._find('InpLocation').set('value', s);
     this._find('Browser').set('src', s);
     this._find('Statusbar').set('value', 'Loading: ' + s);
-  };
+  }
+}
 
-  /////////////////////////////////////////////////////////////////////////////
-  // APPLICATION
-  /////////////////////////////////////////////////////////////////////////////
+class ApplicationWebBrowser extends Application {
 
-  function ApplicationWebBrowser(args, metadata) {
-    Application.apply(this, ['ApplicationWebBrowser', args, metadata]);
+  constructor(args, metadata) {
+    super('ApplicationWebBrowser', args, metadata);
   }
 
-  ApplicationWebBrowser.prototype = Object.create(Application.prototype);
-  ApplicationWebBrowser.constructor = Application;
+  init(settings, metadata) {
+    super.init(...arguments);
 
-  ApplicationWebBrowser.prototype.destroy = function() {
-    return Application.prototype.destroy.apply(this, arguments);
-  };
+    this._addWindow(new ApplicationWebBrowserWindow(this, metadata));
+  }
+}
 
-  ApplicationWebBrowser.prototype.init = function(settings, metadata, scheme) {
-    Application.prototype.init.apply(this, arguments);
+OSjs.Applications.ApplicationWebBrowser = ApplicationWebBrowser;
 
-    this._addWindow(new ApplicationWebBrowserWindow(this, metadata, scheme));
-  };
-
-  /////////////////////////////////////////////////////////////////////////////
-  // EXPORTS
-  /////////////////////////////////////////////////////////////////////////////
-
-  OSjs.Applications = OSjs.Applications || {};
-  OSjs.Applications.ApplicationWebBrowser = OSjs.Applications.ApplicationWebBrowser || {};
-  OSjs.Applications.ApplicationWebBrowser.Class = ApplicationWebBrowser;
-
-})(OSjs.Core.Application, OSjs.Core.Window, OSjs.Utils, OSjs.API, OSjs.VFS, OSjs.GUI);
